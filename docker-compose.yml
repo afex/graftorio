@@ -4,7 +4,8 @@ services:
     image: prom/node-exporter
     command: --collector.textfile.directory=/textfiles
     volumes:
-      - ~/Library/Application Support/factorio/script-output/metrics/:/textfiles
+      # - %APPDATA%\Factorio\script-output\metrics:/textfiles # Windows
+      - ~/Library/Application Support/factorio/script-output/metrics/:/textfiles # OS X
     ports:
       - 9100
   prometheus:
