@@ -8,6 +8,7 @@ gauge_kill_count_input = prometheus.gauge("factorio_kill_count_input", "kills", 
 gauge_kill_count_output = prometheus.gauge("factorio_kill_count_output", "losses", {"force", "name"})
 gauge_entity_build_count_input = prometheus.gauge("factorio_entity_build_count_input", "entities placed", {"force", "name"})
 gauge_entity_build_count_output = prometheus.gauge("factorio_entity_build_count_output", "entities removed", {"force", "name"})
+gauge_items_launched = prometheus.gauge("factorio_items_launched_total", "items launched in rockets", {"force", "name"})
 
 script.on_event(defines.events.on_tick, function(event)
   if event.tick % 600 == 0 then
@@ -27,6 +28,10 @@ script.on_event(defines.events.on_tick, function(event)
         for name, n in pairs(stat[1].output_counts) do
           stat[3]:set(n, {player.force.name, name})
         end
+      end
+
+      for name, n in pairs(player.force.items_launched) do
+        gauge_items_launched:set(n, {player.force.name, name})
       end
     end
 
