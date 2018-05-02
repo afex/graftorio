@@ -35,6 +35,6 @@ script.on_event(defines.events.on_tick, function(event)
       end
     end
 
-    game.write_file("metrics/game.prom", prometheus.collect(), false)
+    game.write_file("graftorio/game.prom", prometheus.collect(), false)
   end
 end)
