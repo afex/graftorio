@@ -5,6 +5,6 @@
   "author": "afex",
   "description": "visualize metrics from your factorio game in grafana",
   "homepage": "https://github.com/afex/graftorio",
-  "dependencies": ["base >= 0.16.36"],
+  "dependencies": ["base >= 0.16.36", "? YARM >= 0.7.304"],
   "factorio_version": "0.16"
 }
