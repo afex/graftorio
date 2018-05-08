@@ -5,7 +5,7 @@ services:
     command: --collector.textfile.directory=/textfiles
     volumes:
       - ${APPDATA}\Factorio\script-output\graftorio:/textfiles # Windows
-      # - ~/Library/Application Support/factorio/script-output/graftorio/:/textfiles # OS X
+      # - ~/Library/Application Support/factorio/script-output/graftorio/:/textfiles # macOS
       # - /opt/factorio/script-output/graftorio:/textfiles # Linux
     ports:
       - 9100
