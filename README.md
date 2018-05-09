@@ -22,6 +22,7 @@ in order to use graftorio, you need to run the grafana software and a database c
 1. launch factorio
 1. install the "graftorio" mod via the mods menu
 1. load up your game, and see your statistics in the grafana dashboard
+   - [beginner instructions for building dashboards](https://youtu.be/sKNZMtoSHN4)
 
 ## Debugging
 
