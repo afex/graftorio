@@ -11,6 +11,7 @@ gauge_entity_build_count_output = prometheus.gauge("factorio_entity_build_count_
 gauge_items_launched = prometheus.gauge("factorio_items_launched_total", "items launched in rockets", {"force", "name"})
 gauge_electric_input = prometheus.gauge("factorio_electric_input", "electricity consumed", {"force", "index", "name"})
 gauge_electric_output = prometheus.gauge("factorio_electric_output", "electricity produced", {"force", "index", "name"})
+gauge_circuit_container_contents = prometheus.gauge("factorio_circuit_container_contents", "", {"force", "id", "name"})
 
 gauge_yarm_site_amount = prometheus.gauge("factorio_yarm_site_amount", "YARM - site amount remaining", {"force", "name", "type"})
 gauge_yarm_site_ore_per_minute = prometheus.gauge("factorio_yarm_site_ore_per_minute", "YARM - site ore per minute", {"force", "name", "type"})
@@ -31,6 +32,7 @@ end
 script.on_init(function()
   global.yarm_enabled = false
   global.electric_networks = {}
+  global.circuit_networks = {}
 
   if game.active_mods["YARM"] then
     global.yarm_enabled = true
@@ -76,12 +78,30 @@ script.on_event(defines.events.on_tick, function(event)
 
     if global.electric_networks then
       for index, network in pairs(global.electric_networks) do
-        for name, n in pairs(network.input_counts) do
-          gauge_electric_input:set(n, {network.force.name, index, name})
-        end
+        if network.valid then
+          for name, n in pairs(network.input_counts) do
+            gauge_electric_input:set(n, {network.force.name, index, name})
+          end
 
-        for name, n in pairs(network.output_counts) do
-          gauge_electric_output:set(n, {network.force.name, index, name})
+          for name, n in pairs(network.output_counts) do
+            gauge_electric_output:set(n, {network.force.name, index, name})
+          end
+        else
+          table.remove(global.electric_networks, index)
+        end
+      end
+    end
+
+    if global.circuit_networks then
+      for network_id, network in pairs(global.circuit_networks) do
+        if network.valid then
+          for _, s in pairs(network.signals) do
+            if s.signal.type == "item" or s.signal.type == "fluid" then
+              gauge_circuit_container_contents:set(s.count, {network.entity.force.name, network_id, s.signal.name})
+            end
+          end
+        else
+          table.remove(global.circuit_networks, network_id)
         end
       end
     end
@@ -139,21 +159,45 @@ local function electricNetworksAreSame(a, b)
 end
 
 script.on_event(defines.events.on_selected_entity_changed, function(event)
-  if event.last_entity and event.last_entity.type == "electric-pole" and event.last_entity.electric_network_statistics then
-    local found = false
-    if global.electric_networks == nil then
-      global.electric_networks = {}
-    end
+  if event.last_entity then
+    if event.last_entity.type == "electric-pole" and event.last_entity.electric_network_statistics then
+      local found = false
+      if global.electric_networks == nil then
+        global.electric_networks = {}
+      end
 
-    for _, network in pairs(global.electric_networks) do
-      if electricNetworksAreSame(network, event.last_entity.electric_network_statistics) then
-        found = true
+      for _, network in pairs(global.electric_networks) do
+        if electricNetworksAreSame(network, event.last_entity.electric_network_statistics) then
+          found = true
+        end
+      end
+
+      if found ~= true then
+        table.insert(global.electric_networks, event.last_entity.electric_network_statistics)
+        game.print("graftorio: discovered new electric network")
       end
     end
 
-    if found ~= true then
-      table.insert(global.electric_networks, event.last_entity.electric_network_statistics)
-      game.print("graftorio: discovered new electric network")
+    local red = event.last_entity.get_circuit_network(defines.wire_type.red, defines.circuit_connector_id.container)
+    if red ~= nil then
+      if global.circuit_networks == nil then
+        global.circuit_networks = {}
+      end
+      if global.circuit_networks[red.network_id] == nil then
+        global.circuit_networks[red.network_id] = red
+        game.print("graftorio: discovered new circuit network")
+      end
+    end
+
+    local green = event.last_entity.get_circuit_network(defines.wire_type.green, defines.circuit_connector_id.container)
+    if green ~= nil then
+      if global.circuit_networks == nil then
+        global.circuit_networks = {}
+      end
+      if global.circuit_networks[green.network_id] == nil then
+        global.circuit_networks[green.network_id] = green
+        game.print("graftorio: discovered new circuit network")
+      end
     end
   end
 end)
