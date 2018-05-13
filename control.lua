@@ -76,6 +76,11 @@ script.on_event(defines.events.on_tick, function(event)
 
     if global.electric_networks then
       for index, network in pairs(global.electric_networks) do
+        if network.valid ~= true then
+          table.remove(global.electric_networks, index)
+          return
+        end
+
         for name, n in pairs(network.input_counts) do
           gauge_electric_input:set(n, {network.force.name, index, name})
         end
@@ -100,6 +105,10 @@ end)
 local function electricNetworksAreSame(a, b)
   if a == b then
     return true
+  end
+
+  if a.valid ~= true or b.valid ~= true then
+    return false
   end
 
   local ainputs = 0
