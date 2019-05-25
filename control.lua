@@ -12,6 +12,7 @@ gauge_items_launched = prometheus.gauge("factorio_items_launched_total", "items 
 gauge_yarm_site_amount = prometheus.gauge("factorio_yarm_site_amount", "YARM - site amount remaining", {"force", "name", "type"})
 gauge_yarm_site_ore_per_minute = prometheus.gauge("factorio_yarm_site_ore_per_minute", "YARM - site ore per minute", {"force", "name", "type"})
 gauge_yarm_site_remaining_permille = prometheus.gauge("factorio_yarm_site_remaining_permille", "YARM - site permille remaining", {"force", "name", "type"})
+gauge_train_station_loop_time = prometheus.gauge("factorio_train_station_loop_time", "train loop time", {"from", "to"})
 
 local function handleYARM(site)
   gauge_yarm_site_amount:set(site.amount, {site.force_name, site.site_name, site.ore_type})
@@ -37,7 +38,7 @@ script.on_init(function()
 end)
 
 script.on_load(function()
-   register_events()
+  register_events()
 end)
 
 script.on_configuration_changed(function(event)
@@ -51,32 +52,52 @@ script.on_configuration_changed(function(event)
 end)
 
 function register_events()
-   script.on_event(defines.events.on_tick, function(event)
-     if event.tick % 600 == 0 then
-       for _, player in pairs(game.players) do
-         stats = {
-           {player.force.item_production_statistics, gauge_item_production_input, gauge_item_production_output},
-           {player.force.fluid_production_statistics, gauge_fluid_production_input, gauge_fluid_production_output},
-           {player.force.kill_count_statistics, gauge_kill_count_input, gauge_kill_count_output},
-           {player.force.entity_build_count_statistics, gauge_entity_build_count_input, gauge_entity_build_count_output},
-         }
+  script.on_event(defines.events.on_tick, function(event)
+    if event.tick % 600 == 0 then
+      for _, player in pairs(game.players) do
+        stats = {
+          {player.force.item_production_statistics, gauge_item_production_input, gauge_item_production_output},
+          {player.force.fluid_production_statistics, gauge_fluid_production_input, gauge_fluid_production_output},
+          {player.force.kill_count_statistics, gauge_kill_count_input, gauge_kill_count_output},
+          {player.force.entity_build_count_statistics, gauge_entity_build_count_input, gauge_entity_build_count_output},
+        }
 
-         for _, stat in pairs(stats) do
-           for name, n in pairs(stat[1].input_counts) do
-             stat[2]:set(n, {player.force.name, name})
-           end
+        for _, stat in pairs(stats) do
+          for name, n in pairs(stat[1].input_counts) do
+            stat[2]:set(n, {player.force.name, name})
+          end
 
-           for name, n in pairs(stat[1].output_counts) do
-             stat[3]:set(n, {player.force.name, name})
-           end
-         end
+          for name, n in pairs(stat[1].output_counts) do
+            stat[3]:set(n, {player.force.name, name})
+          end
+        end
 
-         for name, n in pairs(player.force.items_launched) do
-           gauge_items_launched:set(n, {player.force.name, name})
-         end
-       end
+        for name, n in pairs(player.force.items_launched) do
+          gauge_items_launched:set(n, {player.force.name, name})
+        end
+      end
 
-       game.write_file("graftorio/game.prom", prometheus.collect(), false)
-     end
-   end)
+      game.write_file("graftorio/game.prom", prometheus.collect(), false)
+    end
+  end)
+
+  trains = {}
+  script.on_event(defines.events.on_train_changed_state, function(event)
+    if event.train.state == defines.train_state.arrive_station then
+      if trains[event.train.id] == nil then
+        trains[event.train.id] = {event.train.path_end_stop.backer_name, game.tick}
+      else
+        duration = game.tick - trains[event.train.id][2]
+        -- game.print(event.train.id .. ": " .. trains[event.train.id][1] .. "->" .. event.train.path_end_stop.backer_name .. " took " .. duration / 60 .. "s")
+        gauge_train_station_loop_time:set(duration / 60, {trains[event.train.id][1], event.train.path_end_stop.backer_name})
+      end
+    end
+
+    if event.train.state == defines.train_state.on_the_path and event.old_state == defines.train_state.wait_station then
+      if trains[event.train.id] ~= nil then
+        trains[event.train.id][2] = game.tick
+      end
+      -- game.print(event.train.id .. " leaving for " .. event.train.path_end_stop.backer_name)
+    end
+  end)
 end
