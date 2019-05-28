@@ -1,5 +1,7 @@
 prometheus = require("prometheus/prometheus")
 
+train_buckets = {10, 30, 60, 90, 120, 300, 600}
+
 gauge_item_production_input = prometheus.gauge("factorio_item_production_input", "items produced", {"force", "name"})
 gauge_item_production_output = prometheus.gauge("factorio_item_production_output", "items consumed", {"force", "name"})
 gauge_fluid_production_input = prometheus.gauge("factorio_fluid_production_input", "fluids produced", {"force", "name"})
@@ -14,8 +16,12 @@ gauge_yarm_site_ore_per_minute = prometheus.gauge("factorio_yarm_site_ore_per_mi
 gauge_yarm_site_remaining_permille = prometheus.gauge("factorio_yarm_site_remaining_permille", "YARM - site permille remaining", {"force", "name", "type"})
 gauge_train_trip_time = prometheus.gauge("factorio_train_trip_time", "train trip time", {"from", "to"})
 gauge_train_wait_time = prometheus.gauge("factorio_train_wait_time", "train wait time", {"from", "to"})
-histogram_train_trip_time = prometheus.histogram("factorio_train_trip_time_groups", "train trip time", {"from", "to"}, {10, 30, 60, 90, 120, 300, 600})
-histogram_train_wait_time = prometheus.histogram("factorio_train_wait_time_groups", "train wait time", {"from", "to"}, {10, 30, 60, 90, 120, 300, 600})
+gauge_train_direct_loop_time = prometheus.gauge("factorio_train_direct_loop_time", "train direct loop time", {"a", "b"})
+gauge_train_arrival_time = prometheus.gauge("factorio_train_arrival_time", "train arrival time", {"station"})
+histogram_train_trip_time = prometheus.histogram("factorio_train_trip_time_groups", "train trip time", {"from", "to"}, train_buckets)
+histogram_train_wait_time = prometheus.histogram("factorio_train_wait_time_groups", "train wait time", {"from", "to"}, train_buckets)
+histogram_train_direct_loop_time = prometheus.histogram("factorio_train_direct_loop_time_groups", "train direct loop time", {"a", "b"}, train_buckets)
+histogram_train_arrival_time = prometheus.histogram("factorio_train_arrival_time_groups", "train arrival time", {"station"}, train_buckets)
 
 local function handleYARM(site)
   gauge_yarm_site_amount:set(site.amount, {site.force_name, site.site_name, site.ore_type})
@@ -55,17 +61,66 @@ script.on_configuration_changed(function(event)
 end)
 
 train_trips = {}
+arrivals = {}
 watched_train = 281
 local function watch_train(event, msg)
   if event.train.id == watched_train then
-    -- game.print(msg)
+    game.print(msg)
   end
 end
 
+local function create_train(event)
+    -- {source station, tick it departed there, tick last begun waiting, total ticks spent waiting}
+    train_trips[event.train.id] = {event.train.path_end_stop.backer_name, game.tick, 0, 0}
+    watch_train(event, "begin tracking " .. event.train.id)
+end
+
+local function create_station(event)
+  -- {last arrival tick}
+  arrivals[event.train.path_end_stop.backer_name] = {0}
+end
+
 local function reset_train(event)
-  -- {source station, tick it departed there, tick last begun waiting, total ticks spent waiting}
   train_trips[event.train.id] = {event.train.path_end_stop.backer_name, game.tick, 0, 0}
-  watch_train(event, "begin tracking " .. event.train.id)
+end
+
+seen = {}
+local function direct_loop(event, duration, labels)
+  if seen[labels[1]] == nil then
+    seen[labels[1]] = {}
+  end
+  
+  seen[labels[1]][labels[2]] = duration
+  watch_train(event, labels[1] .. ":" .. labels[2] .. " seen")
+
+  if seen[labels[2]] and seen[labels[2]][labels[1]] then
+    total = duration + seen[labels[2]][labels[1]]
+    
+    sorted = labels
+    table.sort(sorted)
+
+    watch_train(event, sorted[1] .. ":" .. sorted[2] .. " total " .. total)
+
+    gauge_train_direct_loop_time:set(total, sorted)
+    histogram_train_direct_loop_time:observe(total, sorted)
+  end
+end
+
+local function track_arrival(event)
+  if arrivals[event.train.path_end_stop.backer_name] == nil then
+    create_station(event)
+  else
+    watch_train(event, "arrived at " .. event.train.path_end_stop.backer_name)
+    if arrivals[event.train.path_end_stop.backer_name][1] ~= 0 then
+      lag = (game.tick - arrivals[event.train.path_end_stop.backer_name][1]) / 60
+      labels = {event.train.path_end_stop.backer_name}
+
+      gauge_train_arrival_time:set(lag, labels)
+      histogram_train_arrival_time:observe(lag, labels)
+    end
+
+    arrivals[event.train.path_end_stop.backer_name][1] = game.tick
+  end
 end
 
 function register_events()
@@ -99,6 +154,10 @@ function register_events()
   end)
 
   script.on_event(defines.events.on_train_changed_state, function(event)
+    if event.train.state == defines.train_state.arrive_station then
+      track_arrival(event)
+    end
+
     if train_trips[event.train.id] ~= nil then
       if event.train.state == defines.train_state.arrive_station then
         duration = (game.tick - train_trips[event.train.id][2]) / 60
@@ -112,6 +171,7 @@ function register_events()
         gauge_train_wait_time:set(wait, labels)
         histogram_train_trip_time:observe(duration, labels)
         histogram_train_wait_time:observe(duration, labels)
+        direct_loop(event, duration, labels)
 
         reset_train(event)
       elseif event.train.state == defines.train_state.on_the_path and event.old_state == defines.train_state.wait_station then
@@ -131,7 +191,7 @@ function register_events()
     end
 
     if train_trips[event.train.id] == nil and event.train.state == defines.train_state.arrive_station then
-      reset_train(event)
+      create_train(event)
     end
   end)
 end
