@@ -12,7 +12,10 @@ gauge_items_launched = prometheus.gauge("factorio_items_launched_total", "items 
 gauge_yarm_site_amount = prometheus.gauge("factorio_yarm_site_amount", "YARM - site amount remaining", {"force", "name", "type"})
 gauge_yarm_site_ore_per_minute = prometheus.gauge("factorio_yarm_site_ore_per_minute", "YARM - site ore per minute", {"force", "name", "type"})
 gauge_yarm_site_remaining_permille = prometheus.gauge("factorio_yarm_site_remaining_permille", "YARM - site permille remaining", {"force", "name", "type"})
-gauge_train_station_loop_time = prometheus.gauge("factorio_train_station_loop_time", "train loop time", {"from", "to"})
+gauge_train_trip_time = prometheus.gauge("factorio_train_trip_time", "train trip time", {"from", "to"})
+gauge_train_wait_time = prometheus.gauge("factorio_train_wait_time", "train wait time", {"from", "to"})
+histogram_train_trip_time = prometheus.histogram("factorio_train_trip_time_groups", "train trip time", {"from", "to"}, {10, 30, 60, 90, 120, 300, 600})
+histogram_train_wait_time = prometheus.histogram("factorio_train_wait_time_groups", "train wait time", {"from", "to"}, {10, 30, 60, 90, 120, 300, 600})
 
 local function handleYARM(site)
   gauge_yarm_site_amount:set(site.amount, {site.force_name, site.site_name, site.ore_type})
@@ -51,6 +54,20 @@ script.on_configuration_changed(function(event)
   hookupYARM()
 end)
 
+train_trips = {}
+watched_train = 281
+local function watch_train(event, msg)
+  if event.train.id == watched_train then
+    -- game.print(msg)
+  end
+end
+
+local function reset_train(event)
+  -- {source station, tick it departed there, tick last begun waiting, total ticks spent waiting}
+  train_trips[event.train.id] = {event.train.path_end_stop.backer_name, game.tick, 0, 0}
+  watch_train(event, "begin tracking " .. event.train.id)
+end
+
 function register_events()
   script.on_event(defines.events.on_tick, function(event)
     if event.tick % 600 == 0 then
@@ -81,23 +98,40 @@ function register_events()
     end
   end)
 
-  trains = {}
   script.on_event(defines.events.on_train_changed_state, function(event)
-    if event.train.state == defines.train_state.arrive_station then
-      if trains[event.train.id] == nil then
-        trains[event.train.id] = {event.train.path_end_stop.backer_name, game.tick}
-      else
-        duration = game.tick - trains[event.train.id][2]
-        -- game.print(event.train.id .. ": " .. trains[event.train.id][1] .. "->" .. event.train.path_end_stop.backer_name .. " took " .. duration / 60 .. "s")
-        gauge_train_station_loop_time:set(duration / 60, {trains[event.train.id][1], event.train.path_end_stop.backer_name})
+    if train_trips[event.train.id] ~= nil then
+      if event.train.state == defines.train_state.arrive_station then
+        duration = (game.tick - train_trips[event.train.id][2]) / 60
+        wait = train_trips[event.train.id][4] / 60
+
+        watch_train(event, event.train.id .. ": " .. train_trips[event.train.id][1] .. "->" .. event.train.path_end_stop.backer_name .. " took " .. duration .. "s waited " .. wait .. "s")
+
+        labels = {train_trips[event.train.id][1], event.train.path_end_stop.backer_name}
+        
+        gauge_train_trip_time:set(duration, labels)
+        gauge_train_wait_time:set(wait, labels)
+        histogram_train_trip_time:observe(duration, labels)
+        histogram_train_wait_time:observe(duration, labels)
+
+        reset_train(event)
+      elseif event.train.state == defines.train_state.on_the_path and event.old_state == defines.train_state.wait_station then
+        -- begin moving after waiting at a station
+        train_trips[event.train.id][2] = game.tick
+        watch_train(event, event.train.id .. " leaving for " .. event.train.path_end_stop.backer_name)
+      elseif event.train.state == defines.train_state.wait_signal then
+        -- waiting at a signal
+        train_trips[event.train.id][3] = game.tick
+        watch_train(event, event.train.id .. " waiting")
+      elseif event.old_state == defines.train_state.wait_signal then
+        -- begin moving after waiting at a signal
+        train_trips[event.train.id][4] = train_trips[event.train.id][4] + (game.tick - train_trips[event.train.id][3])
+        watch_train(event, event.train.id .. " waited for " .. (game.tick - train_trips[event.train.id][3]) / 60)
+        train_trips[event.train.id][3] = 0
       end
     end
 
-    if event.train.state == defines.train_state.on_the_path and event.old_state == defines.train_state.wait_station then
-      if trains[event.train.id] ~= nil then
-        trains[event.train.id][2] = game.tick
-      end
-      -- game.print(event.train.id .. " leaving for " .. event.train.path_end_stop.backer_name)
+    if train_trips[event.train.id] == nil and event.train.state == defines.train_state.arrive_station then
+      reset_train(event)
     end
   end)
 end
