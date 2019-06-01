@@ -79,8 +79,8 @@ end)
 
 train_trips = {}
 arrivals = {}
-watched_train = 3060
-watched_station = "Copper Plate Pickup - Depot Old Detroit"
+watched_train = 0
+watched_station = ""
 local function watch_train(event, msg)
   if event.train.id == watched_train then
     game.print(msg)
