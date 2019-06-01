@@ -2,6 +2,8 @@ prometheus = require("prometheus/prometheus")
 
 train_buckets = {10, 30, 60, 90, 120, 300, 600}
 
+gauge_tick = prometheus.gauge("factorio_tick", "game tick")
+
 gauge_item_production_input = prometheus.gauge("factorio_item_production_input", "items produced", {"force", "name"})
 gauge_item_production_output = prometheus.gauge("factorio_item_production_output", "items consumed", {"force", "name"})
 gauge_fluid_production_input = prometheus.gauge("factorio_fluid_production_input", "fluids produced", {"force", "name"})
@@ -20,8 +22,8 @@ gauge_train_wait_time = prometheus.gauge("factorio_train_wait_time", "train wait
 histogram_train_trip_time = prometheus.histogram("factorio_train_trip_time_groups", "train trip time", {"from", "to", "train_id"}, train_buckets)
 histogram_train_wait_time = prometheus.histogram("factorio_train_wait_time_groups", "train wait time", {"from", "to", "train_id"}, train_buckets)
 
--- gauge_train_direct_loop_time = prometheus.gauge("factorio_train_direct_loop_time", "train direct loop time", {"a", "b"})
--- histogram_train_direct_loop_time = prometheus.histogram("factorio_train_direct_loop_time_groups", "train direct loop time", {"a", "b"}, train_buckets)
+gauge_train_direct_loop_time = prometheus.gauge("factorio_train_direct_loop_time", "train direct loop time", {"a", "b"})
+histogram_train_direct_loop_time = prometheus.histogram("factorio_train_direct_loop_time_groups", "train direct loop time", {"a", "b"}, train_buckets)
 
 gauge_train_arrival_time = prometheus.gauge("factorio_train_arrival_time", "train arrival time", {"station"})
 histogram_train_arrival_time = prometheus.histogram("factorio_train_arrival_time_groups", "train arrival time", {"station"}, train_buckets)
@@ -65,8 +67,8 @@ end)
 
 train_trips = {}
 arrivals = {}
-watched_train = 281
-watched_station = "Iron Plate Pickup - Iron Smelter S"
+watched_train = 3060
+watched_station = "Copper Plate Pickup - Depot Old Detroit"
 local function watch_train(event, msg)
   if event.train.id == watched_train then
     game.print(msg)
@@ -95,27 +97,38 @@ local function reset_train(event)
   train_trips[event.train.id] = {event.train.path_end_stop.backer_name, game.tick, 0, 0}
 end
 
--- seen = {}
--- local function direct_loop(event, duration, labels)
---   if seen[labels[1]] == nil then
---     seen[labels[1]] = {}
---   end
+seen = {}
+local function direct_loop(event, duration, labels)
+  from = labels[1]
+  to = labels[2]
+  train_id = labels[3]
   
---   seen[labels[1]][labels[2]] = duration
---   -- watch_train(event, labels[1] .. ":" .. labels[2] .. " seen")
+  if seen[train_id] == nil then
+    seen[train_id] = {}
+  end
+  
+  if seen[train_id][from] == nil then
+    seen[train_id][from] = {}
+  end
 
---   if seen[labels[2]] and seen[labels[2]][labels[1]] then
---     total = duration + seen[labels[2]][labels[1]]
+  if seen[train_id][from][to] then
+    total = (game.tick - seen[train_id][from][to]) / 60
     
---     sorted = labels
---     table.sort(sorted)
+    sorted = {from, to}
+    table.sort(sorted)
 
---     -- watch_train(event, sorted[1] .. ":" .. sorted[2] .. " total " .. total)
+    -- watch_train(event, sorted[1] .. ":" .. sorted[2] .. " total " .. total)
 
---     gauge_train_direct_loop_time:set(total, sorted)
---     histogram_train_direct_loop_time:observe(total, sorted)
---   end
--- end
+    gauge_train_direct_loop_time:set(total, sorted)
+    histogram_train_direct_loop_time:observe(total, sorted)
+  end
+
+  if seen[train_id][to] and seen[train_id][to][from] then
+    -- watch_train(event, from .. ":" .. to .. " lap " .. (game.tick - seen[train_id][to][from]) / 60)
+  end
+
+  seen[train_id][from][to] = game.tick
+end
 
 local function track_arrival(event)
   if arrivals[event.train.path_end_stop.backer_name] == nil then
@@ -139,6 +152,7 @@ end
 function register_events()
   script.on_event(defines.events.on_tick, function(event)
     if event.tick % 600 == 0 then
+      gauge_tick:set(game.tick)
       for _, player in pairs(game.players) do
         stats = {
           {player.force.item_production_statistics, gauge_item_production_input, gauge_item_production_output},
@@ -183,8 +197,8 @@ function register_events()
         gauge_train_trip_time:set(duration, labels)
         gauge_train_wait_time:set(wait, labels)
         histogram_train_trip_time:observe(duration, labels)
-        histogram_train_wait_time:observe(duration, labels)
-        -- direct_loop(event, duration, labels)
+        histogram_train_wait_time:observe(wait, labels)
+        direct_loop(event, duration, labels)
 
         reset_train(event)
       elseif event.train.state == defines.train_state.on_the_path and event.old_state == defines.train_state.wait_station then
