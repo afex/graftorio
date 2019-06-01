@@ -1,6 +1,18 @@
 prometheus = require("prometheus/prometheus")
 
-train_buckets = {10, 30, 60, 90, 120, 300, 600}
+function split(inputstr, sep)
+  local t={}
+  for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+    table.insert(t, str)
+  end
+  return t
+end
+
+train_buckets = {}
+bucket_settings = split(settings.startup["graftorio-train-histogram-buckets"].value, ",")
+for _, bucket in pairs(bucket_settings) do
+  table.insert(train_buckets, tonumber(bucket))
+end
 
 gauge_tick = prometheus.gauge("factorio_tick", "game tick")
 
