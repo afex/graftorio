@@ -94,18 +94,30 @@ local function watch_station(event, msg)
 end
 
 local function create_train(event)
-    -- {source station, tick it departed there, tick last begun waiting, total ticks spent waiting}
-    train_trips[event.train.id] = {event.train.path_end_stop.backer_name, game.tick, 0, 0}
-    -- watch_train(event, "begin tracking " .. event.train.id)
+  if event.train.path_end_stop == nil then
+    return
+  end
+
+  -- {source station, tick it departed there, tick last begun waiting, total ticks spent waiting}
+  train_trips[event.train.id] = {event.train.path_end_stop.backer_name, game.tick, 0, 0}
+  -- watch_train(event, "begin tracking " .. event.train.id)
 end
 
 local function create_station(event)
+  if event.train.path_end_stop == nil then
+    return
+  end
+  
   -- {last arrival tick}
   arrivals[event.train.path_end_stop.backer_name] = {0}
   -- watch_station(event, "created station " .. event.train.path_end_stop.backer_name)
 end
 
 local function reset_train(event)
+  if event.train.path_end_stop == nil then
+    return
+  end
+
   train_trips[event.train.id] = {event.train.path_end_stop.backer_name, game.tick, 0, 0}
 end
 
@@ -143,6 +155,10 @@ local function direct_loop(event, duration, labels)
 end
 
 local function track_arrival(event)
+  if event.train.path_end_stop == nil then
+    return
+  end
+
   if arrivals[event.train.path_end_stop.backer_name] == nil then
     create_station(event)
   end
@@ -199,6 +215,14 @@ function register_events()
 
     if train_trips[event.train.id] ~= nil then
       if event.train.state == defines.train_state.arrive_station then
+        if event.train.path_end_stop == nil then
+          return
+        end
+
+        if train_trips[event.train.id][1] == event.train.path_end_stop.backer_name then
+          return
+        end
+
         duration = (game.tick - train_trips[event.train.id][2]) / 60
         wait = train_trips[event.train.id][4] / 60
 
