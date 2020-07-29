@@ -19,63 +19,32 @@ gauge_tick = prometheus.gauge("factorio_tick", "game tick")
 gauge_item_production_input = prometheus.gauge("factorio_item_production_input", "items produced", {"force", "name"})
 gauge_item_production_output = prometheus.gauge("factorio_item_production_output", "items consumed", {"force", "name"})
 gauge_fluid_production_input = prometheus.gauge("factorio_fluid_production_input", "fluids produced", {"force", "name"})
-gauge_fluid_production_output =
-  prometheus.gauge("factorio_fluid_production_output", "fluids consumed", {"force", "name"})
+gauge_fluid_production_output = prometheus.gauge("factorio_fluid_production_output", "fluids consumed", {"force", "name"})
 gauge_kill_count_input = prometheus.gauge("factorio_kill_count_input", "kills", {"force", "name"})
 gauge_kill_count_output = prometheus.gauge("factorio_kill_count_output", "losses", {"force", "name"})
-gauge_entity_build_count_input =
-  prometheus.gauge("factorio_entity_build_count_input", "entities placed", {"force", "name"})
-gauge_entity_build_count_output =
-  prometheus.gauge("factorio_entity_build_count_output", "entities removed", {"force", "name"})
+gauge_entity_build_count_input = prometheus.gauge("factorio_entity_build_count_input", "entities placed", {"force", "name"})
+gauge_entity_build_count_output = prometheus.gauge("factorio_entity_build_count_output", "entities removed", {"force", "name"})
 gauge_items_launched = prometheus.gauge("factorio_items_launched_total", "items launched in rockets", {"force", "name"})
-gauge_yarm_site_amount =
-  prometheus.gauge("factorio_yarm_site_amount", "YARM - site amount remaining", {"force", "name", "type"})
-gauge_yarm_site_ore_per_minute =
-  prometheus.gauge("factorio_yarm_site_ore_per_minute", "YARM - site ore per minute", {"force", "name", "type"})
-gauge_yarm_site_remaining_permille =
-  prometheus.gauge("factorio_yarm_site_remaining_permille", "YARM - site permille remaining", {"force", "name", "type"})
+gauge_yarm_site_amount = prometheus.gauge("factorio_yarm_site_amount", "YARM - site amount remaining", {"force", "name", "type"})
+gauge_yarm_site_ore_per_minute = prometheus.gauge("factorio_yarm_site_ore_per_minute", "YARM - site ore per minute", {"force", "name", "type"})
+gauge_yarm_site_remaining_permille = prometheus.gauge("factorio_yarm_site_remaining_permille", "YARM - site permille remaining", {"force", "name", "type"})
 
-gauge_logistic_network_items =
-  prometheus.gauge("factorio_logistics_items", "Items in logistics", {"force", "surface", "network_idx", "name"})
-gauge_logistic_network_bots =
-  prometheus.gauge("factorio_logistics_bots", "Bots in logistic networks", {"force", "surface", "network_idx", "type"})
+gauge_logistic_network_items = prometheus.gauge("factorio_logistics_items", "Items in logistics", {"force", "surface", "network_idx", "name"})
+gauge_logistic_network_bots = prometheus.gauge("factorio_logistics_bots", "Bots in logistic networks", {"force", "surface", "network_idx", "type"})
 
 gauge_train_trip_time = prometheus.gauge("factorio_train_trip_time", "train trip time", {"from", "to", "train_id"})
 gauge_train_wait_time = prometheus.gauge("factorio_train_wait_time", "train wait time", {"from", "to", "train_id"})
-histogram_train_trip_time =
-  prometheus.histogram("factorio_train_trip_time_groups", "train trip time", {"from", "to", "train_id"}, train_buckets)
-histogram_train_wait_time =
-  prometheus.histogram("factorio_train_wait_time_groups", "train wait time", {"from", "to", "train_id"}, train_buckets)
+histogram_train_trip_time = prometheus.histogram("factorio_train_trip_time_groups", "train trip time", {"from", "to", "train_id"}, train_buckets)
+histogram_train_wait_time = prometheus.histogram("factorio_train_wait_time_groups", "train wait time", {"from", "to", "train_id"}, train_buckets)
 
 gauge_train_direct_loop_time = prometheus.gauge("factorio_train_direct_loop_time", "train direct loop time", {"a", "b"})
-histogram_train_direct_loop_time =
-  prometheus.histogram("factorio_train_direct_loop_time_groups", "train direct loop time", {"a", "b"}, train_buckets)
+histogram_train_direct_loop_time = prometheus.histogram("factorio_train_direct_loop_time_groups", "train direct loop time", {"a", "b"}, train_buckets)
 
 gauge_train_arrival_time = prometheus.gauge("factorio_train_arrival_time", "train arrival time", {"station"})
-histogram_train_arrival_time =
-  prometheus.histogram("factorio_train_arrival_time_groups", "train arrival time", {"station"}, train_buckets)
-
-local function handleYARM(site)
-  gauge_yarm_site_amount:set(site.amount, {site.force_name, site.site_name, site.ore_type})
-  gauge_yarm_site_ore_per_minute:set(site.ore_per_minute, {site.force_name, site.site_name, site.ore_type})
-  gauge_yarm_site_remaining_permille:set(site.remaining_permille, {site.force_name, site.site_name, site.ore_type})
-end
-
-local function hookupYARM()
-  if global.yarm_enabled then
-    script.on_event(remote.call("YARM", "get_on_site_updated_event_id"), handleYARM)
-  end
-end
+histogram_train_arrival_time = prometheus.histogram("factorio_train_arrival_time_groups", "train arrival time", {"station"}, train_buckets)
 
 script.on_init(
   function()
-    global.yarm_enabled = false
-
-    if game.active_mods["YARM"] then
-      global.yarm_enabled = true
-    end
-
-    hookupYARM()
     register_events()
   end
 )
@@ -93,8 +62,6 @@ script.on_configuration_changed(
     else
       global.yarm_enabled = false
     end
-
-    hookupYARM()
   end
 )
 
@@ -186,6 +153,7 @@ local function track_arrival(event)
   end
 
   -- watch_station(event, "arrived at " .. event.train.path_end_stop.backer_name)
+  arrival = arrivals[event.train.path_end_stop.backer_name]
   if arrival ~= 0 then
     local lag = (game.tick - arrivals[event.train.path_end_stop.backer_name][1]) / 60
     local labels = {event.train.path_end_stop.backer_name}
@@ -296,9 +264,7 @@ function register_events()
           direct_loop(event, duration, labels)
 
           reset_train(event)
-        elseif
-          event.train.state == defines.train_state.on_the_path and event.old_state == defines.train_state.wait_station
-         then
+        elseif event.train.state == defines.train_state.on_the_path and event.old_state == defines.train_state.wait_station then
           -- watch_train(event, event.train.id .. " leaving for " .. event.train.path_end_stop.backer_name)
           -- begin moving after waiting at a station
           current_train_trip[2] = tick
