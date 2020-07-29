@@ -1,0 +1,24 @@
+version: '3'
+services:
+  exporter:
+    image: prom/node-exporter
+    command: --collector.textfile.directory=/textfiles
+    volumes:
+#- ${APPDATA}\Factorio\script-output\graftorio:/textfiles # Windows
+      # - ~/Library/Application Support/factorio/script-output/graftorio/:/textfiles # macOS
+      - /home/tim/tvc/factorio/user/script-output/graftorio:/textfiles # Linux
+    ports:
+      - 9100
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./data/prometheus:/prometheus
+      - ./data/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    ports:
+      - 3000:3000
