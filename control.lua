@@ -255,7 +255,7 @@ function register_events()
 
           -- watch_train(event, event.train.id .. ": " .. train_trips[event.train.id][1] .. "->" .. event.train.path_end_stop.backer_name .. " took " .. duration .. "s waited " .. wait .. "s")
 
-          local labels = {current_train_trip[1], current_train_trip.path_end_stop.backer_name, current_train.id}
+          local labels = {current_train_trip[1], current_train.path_end_stop.backer_name, current_train.id}
 
           gauge_train_trip_time:set(duration, labels)
           gauge_train_wait_time:set(wait, labels)
