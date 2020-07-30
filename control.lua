@@ -140,11 +140,12 @@ local function track_arrival(event)
 
   local arrival = arrivals[event.train.path_end_stop.backer_name]
   if arrival == nil then
+  if arrivals[event.train.path_end_stop.backer_name] == nil then
     create_station(event)
+    arrival = arrivals[event.train.path_end_stop.backer_name]
   end
 
   -- watch_station(event, "arrived at " .. event.train.path_end_stop.backer_name)
-  arrival = arrivals[event.train.path_end_stop.backer_name]
   if arrival ~= 0 then
     local lag = (game.tick - arrivals[event.train.path_end_stop.backer_name][1]) / 60
     local labels = {event.train.path_end_stop.backer_name}

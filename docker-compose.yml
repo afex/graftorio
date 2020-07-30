@@ -4,9 +4,9 @@ services:
     image: prom/node-exporter
     command: --collector.textfile.directory=/textfiles
     volumes:
-#- ${APPDATA}\Factorio\script-output\graftorio:/textfiles # Windows
+      - ${APPDATA}\Factorio\script-output\graftorio:/textfiles # Windows
       # - ~/Library/Application Support/factorio/script-output/graftorio/:/textfiles # macOS
-      - /home/tim/tvc/factorio/user/script-output/graftorio:/textfiles # Linux
+      # - /opt/factorio/script-output/graftorio:/textfiles # Linux
     ports:
       - 9100
   prometheus:
