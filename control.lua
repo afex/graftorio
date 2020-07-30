@@ -1,6 +1,6 @@
-prometheus = require("prometheus/prometheus")
+local prometheus = require("prometheus/prometheus")
 
-function split(inputstr, sep)
+local function split(inputstr, sep)
   local t = {}
   for str in string.gmatch(inputstr, "([^" .. sep .. "]+)") do
     table.insert(t, str)
@@ -14,7 +14,17 @@ for _, bucket in pairs(bucket_settings) do
   table.insert(train_buckets, tonumber(bucket))
 end
 
+local single_set = {
+  ["seed"] = false,
+  ["mods"] = false
+}
+
 gauge_tick = prometheus.gauge("factorio_tick", "game tick")
+gauge_players_online = prometheus.gauge("factorio_online_players", "online players")
+gauge_evolution = prometheus.gauge("factorio_evolution", "evolution", {"force", "type"})
+gauge_seed = prometheus.gauge("factorio_seed", "seed", {"surface"})
+gauge_mods = prometheus.gauge("factorio_mods", "mods", {"name", "version"})
+gauge_research_queue = prometheus.gauge("factorio_research_queue", "research", {"force", "cur_pos"})
 
 gauge_item_production_input = prometheus.gauge("factorio_item_production_input", "items produced", {"force", "name"})
 gauge_item_production_output = prometheus.gauge("factorio_item_production_output", "items consumed", {"force", "name"})
@@ -24,13 +34,16 @@ gauge_kill_count_input = prometheus.gauge("factorio_kill_count_input", "kills", 
 gauge_kill_count_output = prometheus.gauge("factorio_kill_count_output", "losses", {"force", "name"})
 gauge_entity_build_count_input = prometheus.gauge("factorio_entity_build_count_input", "entities placed", {"force", "name"})
 gauge_entity_build_count_output = prometheus.gauge("factorio_entity_build_count_output", "entities removed", {"force", "name"})
+
 gauge_items_launched = prometheus.gauge("factorio_items_launched_total", "items launched in rockets", {"force", "name"})
-gauge_yarm_site_amount = prometheus.gauge("factorio_yarm_site_amount", "YARM - site amount remaining", {"force", "name", "type"})
-gauge_yarm_site_ore_per_minute = prometheus.gauge("factorio_yarm_site_ore_per_minute", "YARM - site ore per minute", {"force", "name", "type"})
-gauge_yarm_site_remaining_permille = prometheus.gauge("factorio_yarm_site_remaining_permille", "YARM - site permille remaining", {"force", "name", "type"})
 
 gauge_logistic_network_items = prometheus.gauge("factorio_logistics_items", "Items in logistics", {"force", "surface", "network_idx", "name"})
 gauge_logistic_network_bots = prometheus.gauge("factorio_logistics_bots", "Bots in logistic networks", {"force", "surface", "network_idx", "type"})
+
+gauge_total_trains = prometheus.gauge("factorio_train_total", "total trains", {"force"})
+gauge_total_waiting_station_trains = prometheus.gauge("factorio_train_waiting_station", "waiting trains at station", {"force"})
+gauge_total_waiting_signal_trains = prometheus.gauge("factorio_train_waiting_signal", "waiting trains at signal", {"force"})
+gauge_total_traveling_trains = prometheus.gauge("factorio_train_traveling", "traveling_trains", {"force"})
 
 gauge_train_trip_time = prometheus.gauge("factorio_train_trip_time", "train trip time", {"from", "to", "train_id"})
 gauge_train_wait_time = prometheus.gauge("factorio_train_wait_time", "train wait time", {"from", "to", "train_id"})
@@ -42,28 +55,6 @@ histogram_train_direct_loop_time = prometheus.histogram("factorio_train_direct_l
 
 gauge_train_arrival_time = prometheus.gauge("factorio_train_arrival_time", "train arrival time", {"station"})
 histogram_train_arrival_time = prometheus.histogram("factorio_train_arrival_time_groups", "train arrival time", {"station"}, train_buckets)
-
-script.on_init(
-  function()
-    register_events()
-  end
-)
-
-script.on_load(
-  function()
-    register_events()
-  end
-)
-
-script.on_configuration_changed(
-  function(event)
-    if game.active_mods["YARM"] then
-      global.yarm_enabled = true
-    else
-      global.yarm_enabled = false
-    end
-  end
-)
 
 local train_trips = {}
 local arrivals = {}
@@ -167,21 +158,69 @@ local function track_arrival(event)
   arrival[1] = game.tick
 end
 
-function register_events()
+local function register_events()
   script.on_nth_tick(
     600,
     function(event)
       gauge_tick:set(game.tick)
-      for _, player in pairs(game.players) do
-        local force = player.force
+
+      if not single_set.seed then
+        for _, surface in pairs(game.surfaces) do
+          gauge_seed:set(surface.map_gen_settings.seed, {surface = surface.name})
+        end
+      end
+
+      if not single_set.mods then
+        for name, version in pairs(game.active_mods) do
+          gauge_mods:set(name, {version = version})
+        end
+      end
+
+      gauge_players_online:set(table_size(game.connected_players))
+
+      for _, force in pairs(game.forces) do
+        local force_name = force.name
+        local evolution = {
+          {force.evolution_factor, "total"},
+          {force.evolution_factor_by_pollution, "by_polution"},
+          {force.evolution_factor_by_time, "by_time"},
+          {force.evolution_factor_by_killing_spawners, "by_killing_spawners"}
+        }
+        for _, stat in pairs(evolution) do
+          gauge_evolution:set(stat[1], {force = force_name, type = stat[2]})
+        end
+
+        for idx, tech in pairs(force.research_queue) do
+          gauge_research_queue:set(tech.name, {force = force_name, cur_pos = idx})
+        end
+
+        local total = 0
+        local moving = 0
+        local wait_at_station = 0
+        local wait_at_signal = 0
+
+        for _, train in pairs(force.get_trains()) do
+          total = total + 1
+          if train.state == defines.train_state.wait_station then
+            wait_at_station = wait_at_station + 1
+          elseif train.state == defines.train_state.wait_signal then
+            wait_at_signal = wait_at_signal + 1
+          else
+            moving = moving + 1
+          end
+        end
+
+        gauge_total_trains:set(total, {force = force_name})
+        gauge_total_waiting_signal_trains:set(wait_at_signal, {force = force_name})
+        gauge_total_waiting_station_trains:set(wait_at_station, {force = force_name})
+        gauge_total_traveling_trains:set(moving, {force = force_name})
+
         local stats = {
           {force.item_production_statistics, gauge_item_production_input, gauge_item_production_output},
           {force.fluid_production_statistics, gauge_fluid_production_input, gauge_fluid_production_output},
           {force.kill_count_statistics, gauge_kill_count_input, gauge_kill_count_output},
           {force.entity_build_count_statistics, gauge_entity_build_count_input, gauge_entity_build_count_output}
         }
-
-        local force_name = force.name
 
         for _, stat in pairs(stats) do
           for name, n in pairs(stat[1].input_counts) do
@@ -286,3 +325,20 @@ function register_events()
     end
   )
 end
+
+script.on_init(
+  function()
+    register_events()
+  end
+)
+
+script.on_load(
+  function()
+    register_events()
+  end
+)
+
+script.on_configuration_changed(
+  function(event)
+  end
+)
