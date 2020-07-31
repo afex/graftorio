@@ -56,7 +56,7 @@ local function reset_train(event)
     return
   end
 
-  train_trips[event.train.id] = {event.train.path_end_stop.backer_name, game.tick, 0, 0}
+  train_trips[event.train.id] = {event.train.path_end_stop.backer_name, event.tick, 0, 0}
 end
 
 local seen = {}
