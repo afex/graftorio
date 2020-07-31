@@ -9,7 +9,7 @@ gauges.seed = prometheus.gauge("factorio_seed", "seed", {"surface"})
 gauges.mods = prometheus.gauge("factorio_mods", "mods", {"name", "version"})
 
 local lib = {
-  ["on_nth_tick"] = {
+  on_nth_tick = {
     [600] = function(event)
       local gauges = gauges
       local table_size = table_size

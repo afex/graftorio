@@ -2,20 +2,11 @@ local script_data = {
   networks = {}
 }
 
-local defs = {
-  max_distance = false,
-  ignores = {}
-}
-
 gauges.power_production_input = prometheus.gauge("factorio_power_production_input", "power produced", {"force", "name", "network", "surface"})
 gauges.power_production_output = prometheus.gauge("factorio_power_production_output", "power consumed", {"force", "name", "network", "surface"})
 
-local function max_distance()
-  if not defs.max_distance then
-    defs.max_distance = game.max_electric_pole_connection_distance
-  end
-
-  return defs.max_distance
+local function new_entity_entry(entity)
+  script_data.networks[entity.electric_network_id] = {entity = entity, prev = {input = {}, output = {}}}
 end
 
 local function rescan_worlds()
@@ -28,10 +19,6 @@ local function rescan_worlds()
       end
     end
   end
-end
-
-local function new_entity_entry(entity)
-  script_data.networks[entity.electric_network_id] = {entity = entity, prev = {input = {}, output = {}}}
 end
 
 local on_build = function(event)
@@ -47,16 +34,19 @@ local on_destroy = function(event)
   local entity = event.entity
   if entity.type == "electric-pole" then
     local pos = entity.position
-    local max = max_distance()
+    local max = entity.max_wire_distance
     local area = {{pos.x - max, pos.y - max}, {pos.x + max, pos.y + max}}
     local surface = entity.surface
+    local networks = script_data.networks
     local current_idx = entity.electric_network_id
     -- Make sure to create the new network ids before collecting new info
-    entity.disconnect_neighbour()
+    if entity.neighbours.copper then
+      entity.disconnect_neighbour()
+    end
     local finds = surface.find_entities_filtered({type = "electric-pole", area = area})
     for _, new_entity in pairs(finds) do
       if new_entity ~= entity then
-        if new_entity.electric_network_id == current_idx or not script_data.networks[new_entity.electric_network_id] then
+        if new_entity.electric_network_id == current_idx or not networks[new_entity.electric_network_id] then
           new_entity_entry(entity)
         end
       end
@@ -67,23 +57,23 @@ end
 local lib = {
   on_load = function()
     script_data = global.power_data or script_data
-    if global.power_data == nil then
-      global.power_data = script_data
-    end
   end,
   on_init = function()
     global.power_data = global.power_data or script_data
   end,
   on_configuration_changed = function(event)
+    if global.power_data == nil then
+      global.power_data = script_data
+    end
     -- Basicly only when first added or version changed
     -- Power network is added in .10
-    if event.mod_changes.graftorio.new_version == "1.0.10" then
+    if event.mod_changes and event.mod_changes.graftorio and event.mod_changes.graftorio.new_version == "1.0.10" then
       -- scan worlds
       rescan_worlds()
     end
   end,
-  on_nth_tick = {
-    [600] = function(event)
+  on_tick = function(event)
+    if event.tick % 600 == 60 then
       local gauges = gauges
       for idx, network in pairs(script_data.networks) do
         local entity = network.entity
@@ -110,7 +100,7 @@ local lib = {
         end
       end
     end
-  },
+  end,
   events = {
     [defines.events.on_built_entity] = on_build,
     [defines.events.on_robot_built_entity] = on_build,

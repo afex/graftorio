@@ -120,8 +120,8 @@ local function track_arrival(event)
 end
 
 local lib = {
-  ["on_nth_tick"] = {
-    [600] = function(event)
+  on_tick = function(event)
+    if event.tick % 600 == 120 then
       local total = 0
       local moving = 0
       local wait_at_station = 0
@@ -144,8 +144,9 @@ local lib = {
         gauges.total_waiting_station_trains:set(wait_at_station, {force_name})
         gauges.total_traveling_trains:set(moving, {force_name})
       end
+      doExport()
     end
-  },
+  end,
   events = {
     [defines.events.on_train_changed_state] = function(event)
       local current_train = event.train
