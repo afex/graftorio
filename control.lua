@@ -140,7 +140,6 @@ local function track_arrival(event)
 
   local arrival = arrivals[event.train.path_end_stop.backer_name]
   if arrival == nil then
-  if arrivals[event.train.path_end_stop.backer_name] == nil then
     create_station(event)
     arrival = arrivals[event.train.path_end_stop.backer_name]
   end
