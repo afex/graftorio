@@ -8,7 +8,9 @@ histograms = {}
 handler.add_lib(require("scripts/statics"))
 handler.add_lib(require("scripts/force_stats"))
 handler.add_lib(require("scripts/trains"))
+handler.add_lib(require("scripts/power"))
 
+-- Keep as last to export it all
 handler.add_lib(
   {
     ["on_nth_tick"] = {
