@@ -1,9 +1,6 @@
-local script_data = {
-  events = {}
-}
+local events = {}
 
 local function get_event(name)
-  local events = script_data.events
   if not events[name] then
     events[name] = script.generate_event_name()
   end
@@ -12,11 +9,7 @@ local function get_event(name)
 end
 
 local lib = {
-  on_load = function()
-    script_data = global.custom_events or script_data
-  end,
   on_init = function()
-    global.custom_events = global.custom_events or script_data
     -- create the event
     get_event("graftorio_add_stats")
   end,
@@ -34,7 +27,7 @@ local lib = {
     end
   },
   get_events = function()
-    return script_data.events
+    return events
   end
 }
 return lib
