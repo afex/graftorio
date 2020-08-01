@@ -83,7 +83,8 @@ GF_AUTH_ANONYMOUS_ORG_NAME=MyOrganisationForPublicView
 ### Part 3 The exporter
 The exporter needs to have access to your game.prom file, so change the path in the `docker-compose.yml` to where `script-output/graftorio` is found
 
-** Separate servers **
+**Separate servers**
+
 Whenever you want to run the game on a different server you would have to change a few things.
 
 1. The exporter needs to run on the same server/computer as your factorio server/instance.
@@ -118,3 +119,44 @@ To see if prometheus is scraping the data, load `localhost:9090/targets` in a br
 ### grafana
 
 To see if the grafana data source can read correctly, start a new dashboard and add a graph with the query `factorio_item_production_input`. the graph should render the total of every item produced in your game.
+
+## Plugin
+
+To add stats from your own mod into graftorio you can use the following example:
+
+**info.json**
+add graftorio as a prerequisite
+```
+  "dependencies": [
+    "graftorio >= 1.0.12"
+  ],
+```
+
+**control.lua**
+
+```
+-- Example plugin
+local remote_events = {}
+local prometheus
+local gauges = {}
+script.on_init(function(event)
+  if remote.interfaces["graftorio"] then
+    remote_events = remote.call("graftorio", "get_events")
+    register_event()
+  end
+end)
+
+function register_event()
+   script.on_event(remote_events.graftorio_add_stats, function(event)
+      if not prometheus then
+         prometheus = event.prometheus
+         gauges.my_gauge = prometheus.gauge("factorio_gauge_name", "gague description", {"extra_label", "name"})
+      end
+
+      -- Do your data collection here and number must be a float/int
+      -- Can call the set multiple times (e.g. per item)
+
+      gauges.my_gauge:set(number, {"extra_label_value", "item_name"})
+   end)
+end
+```
