@@ -144,11 +144,14 @@ local lib = {
         gauges.total_waiting_station_trains:set(wait_at_station, {force_name})
         gauges.total_traveling_trains:set(moving, {force_name})
       end
-      doExport()
     end
   end,
   events = {
     [defines.events.on_train_changed_state] = function(event)
+      -- disable for slightly better performance
+      if true then
+        return
+      end
       local current_train = event.train
       local tick = event.tick
       local gauges = gauges

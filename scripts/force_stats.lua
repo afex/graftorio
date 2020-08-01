@@ -13,10 +13,10 @@ gauges.entity_build_count_output = prometheus.gauge("factorio_entity_build_count
 gauges.items_launched = prometheus.gauge("factorio_items_launched_total", "items launched in rockets", {"force", "name"})
 
 gauges.logistic_network_items = prometheus.gauge("factorio_logistics_items", "Items in logistics", {"force", "surface", "network_idx", "name"})
-gauges.logistic_network_bots = prometheus.gauge("factorio_logistics_bots", "Bots in logistic networks", {"force", "surface", "network_idx", "type"})
+gauges.logistic_network_bots = prometheus.gauge("factorio_logistics_bots", "Bots in logistic networks", {"force", "surface", "network_idx", "type", "cell_id"})
 
 local lib = {
-  ["on_nth_tick"] = {
+  on_nth_tick = {
     [600] = function(event)
       local gauges = gauges
 
@@ -79,15 +79,11 @@ local lib = {
             for _, src in pairs(bot_stats) do
               gauges.logistic_network_bots:set(network[src], {force_name, surface, idx, src})
             end
-            local charging_bots = 0
-            local waiting_for_charge = 0
             for _, cell in pairs(network.cells) do
-              charging_bots = charging_bots + cell.charging_robot_count
-              waiting_for_charge = waiting_for_charge + cell.to_charge_robot_count
+              local unit_no = cell.owner.unit_number
+              gauges.logistic_network_bots:set(cell.charging_robot_count, {force_name, surface, idx, "charging_bots", unit_no})
+              gauges.logistic_network_bots:set(cell.waiting_for_charge, {force_name, surface, idx, "waiting_for_charge", unit_no})
             end
-
-            gauges.logistic_network_bots:set(charging_bots, {force_name, surface, idx, "charging_bots"})
-            gauges.logistic_network_bots:set(waiting_for_charge, {force_name, surface, idx, "waiting_for_charge"})
           end
         end
       end
