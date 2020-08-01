@@ -34,7 +34,7 @@ local on_destroy = function(event)
   local entity = event.entity
   if entity.type == "electric-pole" then
     local pos = entity.position
-    local max = entity.max_wire_distance
+    local max = entity.prototype and entity.prototype.max_wire_distance or game.max_electric_pole_connection_distance
     local area = {{pos.x - max, pos.y - max}, {pos.x + max, pos.y + max}}
     local surface = entity.surface
     local networks = script_data.networks
