@@ -13,6 +13,7 @@ handler.add_lib(require("scripts/statics"))
 handler.add_lib(require("scripts/force_stats"))
 handler.add_lib(require("scripts/trains"))
 handler.add_lib(require("scripts/power"))
+handler.add_lib(require("scripts/remote"))
 
 -- Keep as last to export it all
 handler.add_lib(

@@ -120,33 +120,33 @@ local function track_arrival(event)
 end
 
 local lib = {
-  on_tick = function(event)
-    if event.tick % 600 == 120 then
-      local total = 0
-      local moving = 0
-      local wait_at_station = 0
-      local wait_at_signal = 0
-
-      for force_name, force in pairs(game.forces) do
-        for _, train in pairs(force.get_trains()) do
-          total = total + 1
-          if train.state == defines.train_state.wait_station then
-            wait_at_station = wait_at_station + 1
-          elseif train.state == defines.train_state.wait_signal then
-            wait_at_signal = wait_at_signal + 1
-          else
-            moving = moving + 1
-          end
-        end
-
-        gauges.total_trains:set(total, {force_name})
-        gauges.total_waiting_signal_trains:set(wait_at_signal, {force_name})
-        gauges.total_waiting_station_trains:set(wait_at_station, {force_name})
-        gauges.total_traveling_trains:set(moving, {force_name})
-      end
-    end
-  end,
   events = {
+    [defines.events.on_tick] = function(event)
+      if event.tick % 600 == 120 then
+        local total = 0
+        local moving = 0
+        local wait_at_station = 0
+        local wait_at_signal = 0
+
+        for force_name, force in pairs(game.forces) do
+          for _, train in pairs(force.get_trains()) do
+            total = total + 1
+            if train.state == defines.train_state.wait_station then
+              wait_at_station = wait_at_station + 1
+            elseif train.state == defines.train_state.wait_signal then
+              wait_at_signal = wait_at_signal + 1
+            else
+              moving = moving + 1
+            end
+          end
+
+          gauges.total_trains:set(total, {force_name})
+          gauges.total_waiting_signal_trains:set(wait_at_signal, {force_name})
+          gauges.total_waiting_station_trains:set(wait_at_station, {force_name})
+          gauges.total_traveling_trains:set(moving, {force_name})
+        end
+      end
+    end,
     [defines.events.on_train_changed_state] = function(event)
       -- disable for slightly better performance
       if true then

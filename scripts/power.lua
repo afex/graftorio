@@ -72,35 +72,6 @@ local lib = {
       rescan_worlds()
     end
   end,
-  on_tick = function(event)
-    if event.tick % 600 == 60 then
-      local gauges = gauges
-      for idx, network in pairs(script_data.networks) do
-        local entity = network.entity
-        if entity and entity.valid and entity.electric_network_id == idx then
-          local prevs = network.prev
-          local force_name = entity.force.name
-          local surface_name = entity.surface.name
-          for name, n in pairs(entity.electric_network_statistics.input_counts) do
-            local p = (n - (prevs.input[name] or 0)) / 600
-            gauges.power_production_input:set(p, {force_name, name, idx, surface_name})
-            prevs.input[name] = n
-          end
-          for name, n in pairs(entity.electric_network_statistics.output_counts) do
-            local p = (n - (prevs.output[name] or 0)) / 600
-            gauges.power_production_output:set(p, {force_name, name, idx, surface_name})
-            prevs.output[name] = n
-          end
-        elseif entity and entity.valid and entity.electric_network_id ~= idx then
-          -- assume this network has been merged with some other so unset
-          script_data.networks[idx] = nil
-        elseif entity and not entity.valid then
-          -- Invalid  entity remove anyhow
-          script_data.networks[idx] = nil
-        end
-      end
-    end
-  end,
   events = {
     [defines.events.on_built_entity] = on_build,
     [defines.events.on_robot_built_entity] = on_build,
@@ -108,7 +79,35 @@ local lib = {
     [defines.events.on_player_mined_entity] = on_destroy,
     [defines.events.on_robot_mined_entity] = on_destroy,
     [defines.events.on_entity_died] = on_destroy,
-    [defines.events.script_raised_destroy] = on_destroy
+    [defines.events.script_raised_destroy] = on_destroy,
+    [defines.events.on_tick] = function(event)
+      if event.tick % 600 == 240 then
+        local gauges = gauges
+        for idx, network in pairs(script_data.networks) do
+          local entity = network.entity
+          if entity and entity.valid and entity.electric_network_id == idx then
+            -- local prevs = network.prev
+            local force_name = entity.force.name
+            local surface_name = entity.surface.name
+            for name, n in pairs(entity.electric_network_statistics.input_counts) do
+              -- local p = (n - (prevs.input[name] or 0)) / 600
+              gauges.power_production_input:set(n, {force_name, name, idx, surface_name})
+              -- prevs.input[name] = n
+            end
+            for name, n in pairs(entity.electric_network_statistics.output_counts) do
+              gauges.power_production_output:set(n, {force_name, name, idx, surface_name})
+              -- prevs.output[name] = n
+            end
+          elseif entity and entity.valid and entity.electric_network_id ~= idx then
+            -- assume this network has been merged with some other so unset
+            script_data.networks[idx] = nil
+          elseif entity and not entity.valid then
+            -- Invalid  entity remove anyhow
+            script_data.networks[idx] = nil
+          end
+        end
+      end
+    end
   },
   rescan_worlds = rescan_worlds
 }
