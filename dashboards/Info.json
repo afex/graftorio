@@ -1,0 +1,1113 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "limit": 100,
+        "name": "Annotations & Alerts",
+        "showIn": 0,
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Some live-stats for the Brave New World series",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": 6,
+  "links": [
+    {
+      "icon": "external link",
+      "tags": [
+        "factorio"
+      ],
+      "type": "dashboards"
+    }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 56,
+      "panels": [],
+      "title": "Base",
+      "type": "row"
+    },
+    {
+      "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "rgb(255, 255, 255)",
+                "value": null
+              }
+            ]
+          },
+          "unit": "dtdhms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "id": 63,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.1.0",
+      "targets": [
+        {
+          "expr": "factorio_tick/60",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Game Time",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "rgb(255, 255, 255)",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 3,
+        "x": 8,
+        "y": 1
+      },
+      "id": 47,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.1.0",
+      "targets": [
+        {
+          "expr": "factorio_online_players",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Players Online",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": null
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "version"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "rgb(255, 255, 255)",
+                      "value": null
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 7,
+        "x": 11,
+        "y": 1
+      },
+      "id": 52,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "/^version$/",
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "pluginVersion": "7.1.0",
+      "targets": [
+        {
+          "expr": "factorio_mods{name=\"base\"}==1",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Factorio",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true,
+              "__name__": true,
+              "instance": true,
+              "job": true,
+              "name": true,
+              "version": false
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": null,
+            "displayMode": "auto"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 53,
+      "options": {
+        "showHeader": false,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "name"
+          }
+        ]
+      },
+      "pluginVersion": "7.1.0",
+      "targets": [
+        {
+          "expr": "factorio_mods{name!=\"base\", name!=\"graftorio\", name!=\"stdlib\", name!~\"nilaus_.*\", name!~\"tvc_.*\"}==1",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Mods",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true,
+              "__name__": true,
+              "instance": true,
+              "job": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": null
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "rgb(255, 255, 255)",
+                      "value": null
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 7,
+        "x": 11,
+        "y": 4
+      },
+      "id": 54,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "pluginVersion": "7.1.0",
+      "targets": [
+        {
+          "expr": "factorio_seed",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Seed",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "instance": true,
+              "job": true,
+              "surface": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "decimals": 6,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "rgb(255, 255, 255)",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 7
+      },
+      "id": 49,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.1.0",
+      "targets": [
+        {
+          "expr": "factorio_evolution{force=\"enemy\", type=\"total\"}",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "{{type}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Evolution",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": null
+          },
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "rgb(255, 255, 255)",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 6,
+        "y": 7
+      },
+      "id": 50,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.1.0",
+      "targets": [
+        {
+          "expr": "factorio_evolution{force=\"enemy\", type!=\"total\"}",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "{{type}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(factorio_evolution{force=\"enemy\", type!=\"total\"})",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "Sum",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Evolution Composition",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "By Killing Spawners",
+            "binary": {
+              "left": "by_killing_spawners",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "Sum"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "By Pollution",
+            "binary": {
+              "left": "by_polution",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "Sum"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "By Time",
+            "binary": {
+              "left": "by_time",
+              "operator": "/",
+              "reducer": "sum",
+              "right": "Sum"
+            },
+            "mode": "binary",
+            "reduce": {
+              "reducer": "sum"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Sum": true,
+              "Time": true,
+              "by_killing_spawners": true,
+              "by_polution": true,
+              "by_time": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "id": 61,
+      "panels": [],
+      "title": "Research",
+      "type": "row"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "decimals": 0,
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "rgb(255, 255, 255)",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 13
+      },
+      "id": 58,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": false
+      },
+      "pluginVersion": "7.1.0",
+      "targets": [
+        {
+          "expr": "factorio_research_queue{index=\"1\"}",
+          "instant": false,
+          "interval": "",
+          "legendFormat": "{{name}}: {{level}}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Research",
+      "type": "gauge"
+    },
+    {
+      "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": null
+          },
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 16,
+        "x": 8,
+        "y": 13
+      },
+      "id": 59,
+      "options": {
+        "showHeader": false,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "index"
+          }
+        ]
+      },
+      "pluginVersion": "7.1.0",
+      "targets": [
+        {
+          "expr": "factorio_research_queue{index!=\"1\"}",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Research Queue",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true,
+              "__name__": true,
+              "force": true,
+              "index": true,
+              "instance": true,
+              "job": true
+            },
+            "indexByName": {
+              "Time": 0,
+              "Value": 7,
+              "__name__": 1,
+              "force": 3,
+              "instance": 4,
+              "job": 5,
+              "level": 6,
+              "name": 2
+            },
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 10,
+      "panels": [],
+      "title": "Rockets",
+      "type": "row"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "rgb(255, 255, 255)",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 20
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.1.0",
+      "targets": [
+        {
+          "expr": "factorio_items_launched_total",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "Rockets launched",
+          "refId": "A",
+          "target": "randomWalk('myName')"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Rockets launched",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "green",
+                "value": 70
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 16,
+        "x": 8,
+        "y": 20
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.1.0",
+      "targets": [
+        {
+          "expr": "rate(factorio_items_launched_total[5m])*80*60",
+          "interval": "",
+          "legendFormat": "Rockets / hour",
+          "refId": "A",
+          "target": "randomWalk('myName')"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Rockets / hour",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 12,
+      "panels": [],
+      "title": "Kills / minute",
+      "type": "row"
+    },
+    {
+      "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "decimals": 0,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "rgb(255, 255, 255)",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 20,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.1.0",
+      "targets": [
+        {
+          "expr": "sum(rate(factorio_kill_count_input{name=~\".*-spawner\"}[5m])*80)",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Spawner",
+          "refId": "E"
+        },
+        {
+          "expr": "sum(rate(factorio_kill_count_input{name=~\"small.*\"}[5m])*80)",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Small",
+          "refId": "D"
+        },
+        {
+          "expr": "sum(rate(factorio_kill_count_input{name=~\"medium.*\"}[5m])*80)",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Medium",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(rate(factorio_kill_count_input{name=~\"big.*\"}[5m])*80)",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Big",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(factorio_kill_count_input{name=~\"behemoth.*\"}[5m])*80)",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Behemoth",
+          "refId": "B"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Biters",
+      "transformations": [],
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "decimals": 0,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "rgb(255, 255, 255)",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 33
+      },
+      "id": 45,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.1.0",
+      "targets": [
+        {
+          "expr": "sum(rate(factorio_kill_count_output{name=~\".*-robot\"}[5m])*80)",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Robots",
+          "refId": "E"
+        },
+        {
+          "expr": "sum(rate(factorio_kill_count_output{name=\"stone-wall\"}[5m])*80)",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Walls",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(factorio_kill_count_output{name=~\".*-turret\"}[5m])*80)",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Turrets",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(rate(factorio_kill_count_output{name!~\".*-worm-.*\", name!~\".*biter.*\", name!~\".*spitter.*\", name!~\"tree-.*\", name!~\".*rock-.*\", name!~\"nilaus-.*\", name!~\".*-robot\", name!=\"stone-wall\", name!~\".*-turret\"}[1m])*80)",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Base",
+          "refId": "C"
+        },
+        {
+          "expr": "factorio_kill_count_output",
+          "hide": true,
+          "interval": "",
+          "legendFormat": "{{name}}",
+          "refId": "G"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Defences",
+      "transformations": [],
+      "type": "stat"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 26,
+  "style": "dark",
+  "tags": [
+    "factorio"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-4h",
+    "to": "now"
+  },
+  "timepicker": {
+    "hidden": false,
+    "refresh_intervals": [
+      "30s",
+      "1m",
+      "5m"
+    ]
+  },
+  "timezone": "",
+  "title": "#Infos",
+  "uid": "hb4b2-4Gz",
+  "version": 20
+}
