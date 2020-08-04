@@ -1,9 +1,8 @@
 local script_data = {
-  networks = {}
+  has_checked = false,
+  networks = {},
+  switches = {}
 }
-
-gauges.power_production_input = prometheus.gauge("factorio_power_production_input", "power produced", {"force", "name", "network", "surface"})
-gauges.power_production_output = prometheus.gauge("factorio_power_production_output", "power consumed", {"force", "name", "network", "surface"})
 
 local function new_entity_entry(entity)
   script_data.networks[entity.electric_network_id] = {entity = entity, prev = {input = {}, output = {}}}
@@ -21,12 +20,26 @@ local function rescan_worlds()
   end
 end
 
+local function get_ignored_networks_by_switches()
+  local ignored = {}
+  local max = math.max
+  for _, switch in pairs(script_data.switches) do
+    if switch.power_switch_state and #switch.neighbours.copper > 1 then
+      local network = max(switch.neighbours.copper[1].electric_network_id, switch.neighbours.copper[2].electric_network_id)
+      ignored[network] = true
+    end
+  end
+  return ignored
+end
+
 local on_build = function(event)
   local entity = event.entity or event.created_entity
   if entity and entity.type == "electric-pole" then
     if not script_data.networks[entity.electric_network_id] then
       new_entity_entry(entity)
     end
+  elseif entity and entity.type == "power-switch" then
+    script_data.switches[entity.unit_number] = entity
   end
 end
 
@@ -51,6 +64,8 @@ local on_destroy = function(event)
         end
       end
     end
+  elseif entity.type == "power-switch" then
+    script_data.switches[entity.unit_number] = nil
   end
 end
 
@@ -65,11 +80,16 @@ local lib = {
     if global.power_data == nil then
       global.power_data = script_data
     end
+
+    if global.power_data.switches == nil then
+      global.power_data.switches = {}
+    end
     -- Basicly only when first added or version changed
     -- Power network is added in .10
-    if event.mod_changes and event.mod_changes.graftorio and event.mod_changes.graftorio.new_version == "1.0.10" then
+    if not script_data.has_checked then
       -- scan worlds
       rescan_worlds()
+      script_data.has_checked = true
     end
   end,
   events = {
@@ -80,12 +100,21 @@ local lib = {
     [defines.events.on_robot_mined_entity] = on_destroy,
     [defines.events.on_entity_died] = on_destroy,
     [defines.events.script_raised_destroy] = on_destroy,
+    [defines.events.on_selected_entity_changed] = function(event)
+      local d = 1
+      -- if event.last_entity and #event.last_entity.neighbours.copper == 0 then
+      --   local a = 1
+      -- end
+    end,
     [defines.events.on_tick] = function(event)
       if event.tick % 600 == 240 then
         local gauges = gauges
+        local ignored = get_ignored_networks_by_switches()
+        gauges.power_production_input = renew_gauge(gauges.power_production_input, "factorio_power_production_input", "power produced", {"force", "name", "network", "surface"})
+        gauges.power_production_output = renew_gauge(gauges.power_production_output, "factorio_power_production_output", "power consumed", {"force", "name", "network", "surface"})
         for idx, network in pairs(script_data.networks) do
           local entity = network.entity
-          if entity and entity.valid and entity.electric_network_id == idx then
+          if entity and entity.valid and not ignored[entity.electric_network_id] and entity.electric_network_id == idx then
             -- local prevs = network.prev
             local force_name = entity.force.name
             local surface_name = entity.surface.name

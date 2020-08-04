@@ -1,5 +1,4 @@
 gauges.evolution = prometheus.gauge("factorio_evolution", "evolution", {"force", "type"})
-gauges.research_queue = prometheus.gauge("factorio_research_queue", "research", {"force", "name", "level", "index"})
 
 gauges.item_production_input = prometheus.gauge("factorio_item_production_input", "items produced", {"force", "name"})
 gauges.item_production_output = prometheus.gauge("factorio_item_production_output", "items consumed", {"force", "name"})
@@ -12,13 +11,15 @@ gauges.entity_build_count_output = prometheus.gauge("factorio_entity_build_count
 
 gauges.items_launched = prometheus.gauge("factorio_items_launched_total", "items launched in rockets", {"force", "name"})
 
-gauges.logistic_network_items = prometheus.gauge("factorio_logistics_items", "Items in logistics", {"force", "surface", "network_idx", "name"})
-gauges.logistic_network_bots = prometheus.gauge("factorio_logistics_bots", "Bots in logistic networks", {"force", "surface", "network_idx", "type"})
-
 local lib = {
   on_nth_tick = {
     [600] = function(event)
       local gauges = gauges
+
+      -- reset research gauge
+      gauges.research_queue = renew_gauge(gauges.research_queue, "factorio_research_queue", "research", {"force", "name", "level", "index"})
+      gauges.logistic_network_items = renew_gauge(gauges.logistic_network_items, "factorio_logistics_items", "Items in logistics", {"force", "surface", "network_idx", "name"})
+      gauges.logistic_network_bots = renew_gauge(gauges.logistic_network_bots, "factorio_logistics_bots", "Bots in logistic networks", {"force", "surface", "network_idx", "type"})
 
       for _, force in pairs(game.forces) do
         local force_name = force.name

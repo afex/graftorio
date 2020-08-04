@@ -1,5 +1,5 @@
 prometheus = require("prometheus/prometheus")
-
+require("utility")
 local handler = require("event_handler")
 
 gauges = {}
