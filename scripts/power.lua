@@ -112,6 +112,7 @@ local lib = {
         local ignored = get_ignored_networks_by_switches()
         gauges.power_production_input = renew_gauge(gauges.power_production_input, "factorio_power_production_input", "power produced", {"force", "name", "network", "surface"})
         gauges.power_production_output = renew_gauge(gauges.power_production_output, "factorio_power_production_output", "power consumed", {"force", "name", "network", "surface"})
+
         for idx, network in pairs(script_data.networks) do
           local entity = network.entity
           if entity and entity.valid and not ignored[entity.electric_network_id] and entity.electric_network_id == idx then
