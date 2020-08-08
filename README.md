@@ -139,24 +139,24 @@ add graftorio as a prerequisite
 local remote_events = {}
 local prometheus
 local gauges = {}
-script.on_init(function(event)
+local load_event = function(event)
   if remote.interfaces["graftorio"] then
-    remote_events = remote.call("graftorio", "get_events")
+    remote_events = remote.call("graftorio", "get_plugin_events")
     register_event()
   end
-end)
+end
+script.on_init(load_event)
+script.on_load(load_event)
 
 function register_event()
    script.on_event(remote_events.graftorio_add_stats, function(event)
-      if not prometheus then
-         prometheus = event.prometheus
-         gauges.my_gauge = prometheus.gauge("factorio_gauge_name", "gague description", {"extra_label", "name"})
-      end
+      -- Reset the gauge every time its calculated (helpfull for changing mod names or like the research queue)
+      remote.call('graftorio', 'make_gauge', 'gauge_name', {"extra_label", "item"})
 
       -- Do your data collection here and number must be a float/int
       -- Can call the set multiple times (e.g. per item)
 
-      gauges.my_gauge:set(number, {"extra_label_value", "item_name"})
+      remote.call('graftorio', 'gauge_set', 'gauge_name', number, {"extra_label_value", "item_name"})
    end)
 end
 ```
