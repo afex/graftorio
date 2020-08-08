@@ -13,7 +13,12 @@ interface = {
     return plugin.get_events()
   end,
   -- Return a new counter every time
-  make_counter = function(name, desc, labels)
+  make_counter = function(name, desc, labels, make_new)
+    if make_new ~= false and remote_counters[name] then
+      local registry = prometheus.get_registry()
+      registry:unregister(remote_counters[name])
+    end
+
     local counter = prometheus.counter(name, desc, labels)
     remote_counters[name] = counter
     return remote_counters[name]
@@ -21,7 +26,7 @@ interface = {
   -- Re-use counter, if not existing create a new one
   get_counter = function(name, desc, labels)
     if not remote_counters[name] then
-      return interface.make_counter(name, desc, labels)
+      return interface.make_counter(name, desc, labels, false)
     end
     return remote_counters[name]
   end,
@@ -30,7 +35,11 @@ interface = {
     counter:set(value, labels)
   end,
   -- Return a new gauge every time
-  make_gauge = function(name, desc, labels)
+  make_gauge = function(name, desc, labels, make_new)
+    if make_new ~= false and remote_gauges[name] then
+      local registry = prometheus.get_registry()
+      registry:unregister(remote_gauges[name])
+    end
     local gauge = prometheus.gauge(name, desc, labels)
     remote_gauges[name] = gauge
     return remote_gauges[name]
@@ -38,7 +47,7 @@ interface = {
   -- Re-use gauge, if not existing create a new one
   get_gauge = function(name, desc, labels)
     if not remote_gauges[name] then
-      return interface.make_gauge(name, desc, labels)
+      return interface.make_gauge(name, desc, labels, false)
     end
     return remote_gauges[name]
   end,
@@ -55,7 +64,11 @@ interface = {
     gauge:dec(value, labels)
   end,
   -- Return a new histogram every time
-  make_histogram = function(name, desc, labels)
+  make_histogram = function(name, desc, labels, make_new)
+    if make_new ~= false and remote_histograms[name] then
+      local registry = prometheus.get_registry()
+      registry:unregister(remote_histograms[name])
+    end
     local histogram = prometheus.histogram(name, desc, labels)
     remote_histograms[name] = histogram
     return remote_histograms[name]
@@ -63,7 +76,7 @@ interface = {
   -- Re-use histogram, if not existing create a new one
   get_histogram = function(name, desc, labels)
     if not remote_histograms[name] then
-      return interface.make_histogram(name, desc, labels)
+      return interface.make_histogram(name, desc, labels, false)
     end
     return remote_histograms[name]
   end,

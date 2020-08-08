@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.15
+Date: 08. 08. 2020
+  Bugfixes:
+    - Fixing plugin options: make sure it can be used and doesn't trigger crashes
+  Changes:
+    - remote interface is expanded to make plugins work
+---------------------------------------------------------------------------------------------------
 Version: 1.0.13
 Date: 04. 08. 2020
   Features:
