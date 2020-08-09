@@ -112,8 +112,10 @@ local lib = {
       if event.tick % 600 == 240 then
         local gauges = gauges
         local ignored = get_ignored_networks_by_switches()
-        gauges.power_production_input = renew_gauge(gauges.power_production_input, "factorio_power_production_input", "power produced", {"force", "name", "network", "surface"})
-        gauges.power_production_output = renew_gauge(gauges.power_production_output, "factorio_power_production_output", "power consumed", {"force", "name", "network", "surface"})
+        gauges.power_production_input =
+          renew_gauge(gauges.power_production_input, "factorio_power_production_input", "power produced", {"force", "name", "network", "surface", "localised_name"})
+        gauges.power_production_output =
+          renew_gauge(gauges.power_production_output, "factorio_power_production_output", "power consumed", {"force", "name", "network", "surface", "localised_name"})
 
         for idx, network in pairs(script_data.networks) do
           local entity = network.entity
@@ -126,7 +128,7 @@ local lib = {
               translate.translate(
                 {"entity-name." .. name},
                 function(translated)
-                  gauges.power_production_input:set(n, {force_name, translated, idx, surface_name})
+                  gauges.power_production_input:set(n, {force_name, name, idx, surface_name, translated})
                 end
               )
               -- prevs.input[name] = n
@@ -135,7 +137,7 @@ local lib = {
               translate.translate(
                 {"entity-name." .. name},
                 function(translated)
-                  gauges.power_production_output:set(n, {force_name, translated, idx, surface_name})
+                  gauges.power_production_output:set(n, {force_name, name, idx, surface_name, translated})
                 end
               )
               -- prevs.output[name] = n

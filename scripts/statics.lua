@@ -4,8 +4,8 @@ gauges.players_online = prometheus.gauge("factorio_online_players", "online play
 gauges.seed = prometheus.gauge("factorio_seed", "seed", {"surface"})
 gauges.mods = prometheus.gauge("factorio_mods", "mods", {"name", "version"})
 
-gauges.pollution_production_input = prometheus.gauge("factorio_pollution_production_input", "pollutions produced", {"name"})
-gauges.pollution_production_output = prometheus.gauge("factorio_pollution_production_output", "pollutions consumed", {"name"})
+gauges.pollution_production_input = prometheus.gauge("factorio_pollution_production_input", "pollutions produced", {"name", "localised_name"})
+gauges.pollution_production_output = prometheus.gauge("factorio_pollution_production_output", "pollutions consumed", {"name", "localised_name"})
 
 local lib = {
   on_nth_tick = {
@@ -33,7 +33,7 @@ local lib = {
           translate.translate(
             {stat[4] .. "." .. name},
             function(translated)
-              stat[2]:set(n, {translated})
+              stat[2]:set(n, {name, translated})
             end
           )
         end
@@ -42,7 +42,7 @@ local lib = {
           translate.translate(
             {stat[4] .. "." .. name},
             function(translated)
-              stat[3]:set(n, {translated})
+              stat[3]:set(n, {name, translated})
             end
           )
         end

@@ -1,16 +1,16 @@
 local translate = require("scripts/translation")
 gauges.evolution = prometheus.gauge("factorio_evolution", "evolution", {"force", "type"})
 
-gauges.item_production_input = prometheus.gauge("factorio_item_production_input", "items produced", {"force", "name"})
-gauges.item_production_output = prometheus.gauge("factorio_item_production_output", "items consumed", {"force", "name"})
-gauges.fluid_production_input = prometheus.gauge("factorio_fluid_production_input", "fluids produced", {"force", "name"})
-gauges.fluid_production_output = prometheus.gauge("factorio_fluid_production_output", "fluids consumed", {"force", "name"})
-gauges.kill_count_input = prometheus.gauge("factorio_kill_count_input", "kills", {"force", "name"})
-gauges.kill_count_output = prometheus.gauge("factorio_kill_count_output", "losses", {"force", "name"})
-gauges.entity_build_count_input = prometheus.gauge("factorio_entity_build_count_input", "entities placed", {"force", "name"})
-gauges.entity_build_count_output = prometheus.gauge("factorio_entity_build_count_output", "entities removed", {"force", "name"})
+gauges.item_production_input = prometheus.gauge("factorio_item_production_input", "items produced", {"force", "name", "localised_name"})
+gauges.item_production_output = prometheus.gauge("factorio_item_production_output", "items consumed", {"force", "name", "localised_name"})
+gauges.fluid_production_input = prometheus.gauge("factorio_fluid_production_input", "fluids produced", {"force", "name", "localised_name"})
+gauges.fluid_production_output = prometheus.gauge("factorio_fluid_production_output", "fluids consumed", {"force", "name", "localised_name"})
+gauges.kill_count_input = prometheus.gauge("factorio_kill_count_input", "kills", {"force", "name", "localised_name"})
+gauges.kill_count_output = prometheus.gauge("factorio_kill_count_output", "losses", {"force", "name", "localised_name"})
+gauges.entity_build_count_input = prometheus.gauge("factorio_entity_build_count_input", "entities placed", {"force", "name", "localised_name"})
+gauges.entity_build_count_output = prometheus.gauge("factorio_entity_build_count_output", "entities removed", {"force", "name", "localised_name"})
 
-gauges.items_launched = prometheus.gauge("factorio_items_launched_total", "items launched in rockets", {"force", "name"})
+gauges.items_launched = prometheus.gauge("factorio_items_launched_total", "items launched in rockets", {"force", "name", "localised_name"})
 
 local lib = {
   on_nth_tick = {
@@ -18,8 +18,9 @@ local lib = {
       local gauges = gauges
 
       -- reset research gauge
-      gauges.research_queue = renew_gauge(gauges.research_queue, "factorio_research_queue", "research", {"force", "name", "level", "index"})
-      gauges.logistic_network_items = renew_gauge(gauges.logistic_network_items, "factorio_logistics_items", "Items in logistics", {"force", "surface", "network_idx", "name"})
+      gauges.research_queue = renew_gauge(gauges.research_queue, "factorio_research_queue", "research", {"force", "name", "level", "index", "localised_name"})
+      gauges.logistic_network_items =
+        renew_gauge(gauges.logistic_network_items, "factorio_logistics_items", "Items in logistics", {"force", "surface", "network_idx", "name", "localised_name"})
       gauges.logistic_network_bots = renew_gauge(gauges.logistic_network_bots, "factorio_logistics_bots", "Bots in logistic networks", {"force", "surface", "network_idx", "type"})
 
       for _, force in pairs(game.forces) do
@@ -40,7 +41,7 @@ local lib = {
           translate.translate(
             previous.localised_name,
             function(translated)
-              gauges.research_queue:set(previous.researched and 1 or 0, {force_name, translated, previous.level, -1})
+              gauges.research_queue:set(previous.researched and 1 or 0, {force_name, name, previous.level, -1, translated})
             end
           )
         end
@@ -50,7 +51,7 @@ local lib = {
           translate.translate(
             tech.localised_name,
             function(translated)
-              gauges.research_queue:set(idx == 1 and force.research_progress or 0, {force_name, translated, levels[tech.name], idx})
+              gauges.research_queue:set(idx == 1 and force.research_progress or 0, {force_name, name, levels[tech.name], idx, translated})
             end
           )
         end
@@ -67,7 +68,7 @@ local lib = {
             translate.translate(
               {stat[4] .. "." .. name},
               function(translated)
-                stat[2]:set(n, {force_name, translated})
+                stat[2]:set(n, {force_name, name, translated})
               end
             )
           end
@@ -76,7 +77,7 @@ local lib = {
             translate.translate(
               {stat[4] .. "." .. name},
               function(translated)
-                stat[3]:set(n, {force_name, translated})
+                stat[3]:set(n, {force_name, name, translated})
               end
             )
           end
@@ -86,7 +87,7 @@ local lib = {
           translate.translate(
             {"item." .. name},
             function(translated)
-              gauges.items_launched:set(n, {force_name, translated})
+              gauges.items_launched:set(n, {force_name, name, translated})
             end
           )
         end
@@ -104,7 +105,7 @@ local lib = {
               translate.translate(
                 {"item-name." .. name},
                 function(translated)
-                  gauges.logistic_network_items:set(v, {force_name, surface, idx, translated})
+                  gauges.logistic_network_items:set(v, {force_name, surface, idx, name, translated})
                 end
               )
             end
