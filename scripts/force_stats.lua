@@ -41,7 +41,7 @@ local lib = {
           translate.translate(
             previous.localised_name,
             function(translated)
-              gauges.research_queue:set(previous.researched and 1 or 0, {force_name, name, previous.level, -1, translated})
+              gauges.research_queue:set(previous.researched and 1 or 0, {force_name, previous.name, previous.level, -1, translated})
             end
           )
         end
@@ -51,7 +51,7 @@ local lib = {
           translate.translate(
             tech.localised_name,
             function(translated)
-              gauges.research_queue:set(idx == 1 and force.research_progress or 0, {force_name, name, levels[tech.name], idx, translated})
+              gauges.research_queue:set(idx == 1 and force.research_progress or 0, {force_name, tech.name, levels[tech.name], idx, translated})
             end
           )
         end
@@ -85,7 +85,7 @@ local lib = {
 
         for name, n in pairs(force.items_launched) do
           translate.translate(
-            {"item." .. name},
+            {"item-name." .. name},
             function(translated)
               gauges.items_launched:set(n, {force_name, name, translated})
             end
