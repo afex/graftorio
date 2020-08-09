@@ -1,3 +1,4 @@
+local translate = require("scripts/translation")
 gauges.tick = prometheus.gauge("factorio_tick", "game tick")
 gauges.players_online = prometheus.gauge("factorio_online_players", "online players")
 gauges.seed = prometheus.gauge("factorio_seed", "seed", {"surface"})
@@ -24,16 +25,26 @@ local lib = {
       end
 
       local stats = {
-        {game.pollution_statistics, gauges.pollution_production_input, gauges.pollution_production_output}
+        {game.pollution_statistics, gauges.pollution_production_input, gauges.pollution_production_output, "entity-name"}
       }
 
       for _, stat in pairs(stats) do
         for name, n in pairs(stat[1].input_counts) do
-          stat[2]:set(n, {name})
+          translate.translate(
+            {stat[4] .. "." .. name},
+            function(translated)
+              stat[2]:set(n, {translated})
+            end
+          )
         end
 
         for name, n in pairs(stat[1].output_counts) do
-          stat[3]:set(n, {name})
+          translate.translate(
+            {stat[4] .. "." .. name},
+            function(translated)
+              stat[3]:set(n, {translated})
+            end
+          )
         end
       end
     end

@@ -1,3 +1,4 @@
+local translate = require("scripts/translation")
 gauges.evolution = prometheus.gauge("factorio_evolution", "evolution", {"force", "type"})
 
 gauges.item_production_input = prometheus.gauge("factorio_item_production_input", "items produced", {"force", "name"})
@@ -34,35 +35,60 @@ local lib = {
         end
 
         -- Levels dont get matched properly so store and save
+        local previous = force.previous_research
+        if previous then
+          translate.translate(
+            previous.localised_name,
+            function(translated)
+              gauges.research_queue:set(previous.researched and 1 or 0, {force_name, translated, previous.level, -1})
+            end
+          )
+        end
         local levels = {}
-        for idx, tech in pairs(force.research_queue) do
-          local cur_level = 1
-          if tech.upgrade then
-            levels[tech.name] = levels[tech.name] and levels[tech.name] + 1 or tech.level
-            cur_level = levels[tech.name]
-          end
-          gauges.research_queue:set(idx == 1 and force.research_progress or 0, {force_name, tech.name, cur_level, idx})
+        for idx, tech in pairs(force.research_queue or {force.current_research}) do
+          levels[tech.name] = levels[tech.name] and levels[tech.name] + 1 or tech.level
+          translate.translate(
+            tech.localised_name,
+            function(translated)
+              gauges.research_queue:set(idx == 1 and force.research_progress or 0, {force_name, translated, levels[tech.name], idx})
+            end
+          )
         end
 
         local stats = {
-          {force.item_production_statistics, gauges.item_production_input, gauges.item_production_output},
-          {force.fluid_production_statistics, gauges.fluid_production_input, gauges.fluid_production_output},
-          {force.kill_count_statistics, gauges.kill_count_input, gauges.kill_count_output},
-          {force.entity_build_count_statistics, gauges.entity_build_count_input, gauges.entity_build_count_output}
+          {force.item_production_statistics, gauges.item_production_input, gauges.item_production_output, "item-name"},
+          {force.fluid_production_statistics, gauges.fluid_production_input, gauges.fluid_production_output, "fluid-name"},
+          {force.kill_count_statistics, gauges.kill_count_input, gauges.kill_count_output, "entity-name"},
+          {force.entity_build_count_statistics, gauges.entity_build_count_input, gauges.entity_build_count_output, "entity-name"}
         }
 
         for _, stat in pairs(stats) do
           for name, n in pairs(stat[1].input_counts) do
-            stat[2]:set(n, {force_name, name})
+            translate.translate(
+              {stat[4] .. "." .. name},
+              function(translated)
+                stat[2]:set(n, {force_name, translated})
+              end
+            )
           end
 
           for name, n in pairs(stat[1].output_counts) do
-            stat[3]:set(n, {force_name, name})
+            translate.translate(
+              {stat[4] .. "." .. name},
+              function(translated)
+                stat[3]:set(n, {force_name, translated})
+              end
+            )
           end
         end
 
         for name, n in pairs(force.items_launched) do
-          gauges.items_launched:set(n, {force_name, name})
+          translate.translate(
+            {"item." .. name},
+            function(translated)
+              gauges.items_launched:set(n, {force_name, translated})
+            end
+          )
         end
 
         local bot_stats = {
@@ -75,7 +101,12 @@ local lib = {
           for idx, network in pairs(networks) do
             for name, n in pairs(network.get_contents()) do
               local v = (n + 2 ^ 31) % 2 ^ 32 - 2 ^ 31
-              gauges.logistic_network_items:set(v, {force_name, surface, idx, name})
+              translate.translate(
+                {"item-name." .. name},
+                function(translated)
+                  gauges.logistic_network_items:set(v, {force_name, surface, idx, translated})
+                end
+              )
             end
             for _, src in pairs(bot_stats) do
               gauges.logistic_network_bots:set(network[src], {force_name, surface, idx, src})

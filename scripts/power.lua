@@ -1,3 +1,5 @@
+local translate = require("scripts/translation")
+
 local script_data = {
   has_checked = false,
   networks = {},
@@ -121,11 +123,21 @@ local lib = {
             local surface_name = entity.surface.name
             for name, n in pairs(entity.electric_network_statistics.input_counts) do
               -- local p = (n - (prevs.input[name] or 0)) / 600
-              gauges.power_production_input:set(n, {force_name, name, idx, surface_name})
+              translate.translate(
+                {"entity-name." .. name},
+                function(translated)
+                  gauges.power_production_input:set(n, {force_name, translated, idx, surface_name})
+                end
+              )
               -- prevs.input[name] = n
             end
             for name, n in pairs(entity.electric_network_statistics.output_counts) do
-              gauges.power_production_output:set(n, {force_name, name, idx, surface_name})
+              translate.translate(
+                {"entity-name." .. name},
+                function(translated)
+                  gauges.power_production_output:set(n, {force_name, translated, idx, surface_name})
+                end
+              )
               -- prevs.output[name] = n
             end
           elseif entity and entity.valid and entity.electric_network_id ~= idx then
