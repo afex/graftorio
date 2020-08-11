@@ -21,8 +21,9 @@ local lib = {
       end
 
       local level = research.level
-      if event.research.force.current_research and event.research.force.current_research.name == research.name then
-        level = research.level - 1
+      -- Previous research is incorrect lvl if it has more than one research
+      if level > 1 then
+        level = level - 1
       end
 
       global.last_research[research.force.name] = {
