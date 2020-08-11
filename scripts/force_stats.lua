@@ -13,6 +13,26 @@ gauges.entity_build_count_output = prometheus.gauge("factorio_entity_build_count
 gauges.items_launched = prometheus.gauge("factorio_items_launched_total", "items launched in rockets", {"force", "name", "localised_name"})
 
 local lib = {
+  events = {
+    [defines.events.on_research_finished] = function(event)
+      local research = event.research
+      if not global.last_research then
+        global.last_research = {}
+      end
+
+      local level = research.level
+      if event.research.force.current_research and event.research.force.current_research.name == research.name then
+        level = research.level - 1
+      end
+
+      global.last_research[research.force.name] = {
+        researched = 1,
+        name = research.name,
+        localised_name = research.localised_name,
+        level = level
+      }
+    end
+  },
   on_nth_tick = {
     [600] = function(event)
       local gauges = gauges
@@ -35,16 +55,17 @@ local lib = {
           gauges.evolution:set(stat[1], {force_name, stat[2]})
         end
 
-        -- Levels dont get matched properly so store and save
-        local previous = force.previous_research
-        if previous then
+        local researched_queue = global.last_research and global.last_research[force_name] or false
+        if researched_queue then
           translate.translate(
-            previous.localised_name,
+            researched_queue.localised_name,
             function(translated)
-              gauges.research_queue:set(previous.researched and 1 or 0, {force_name, previous.name, previous.level, -1, translated})
+              gauges.research_queue:set(researched_queue.researched and 1 or 0, {force_name, researched_queue.name, researched_queue.level, -1, translated})
             end
           )
         end
+
+        -- Levels dont get matched properly so store and save
         local levels = {}
         for idx, tech in pairs(force.research_queue or {force.current_research}) do
           levels[tech.name] = levels[tech.name] and levels[tech.name] + 1 or tech.level

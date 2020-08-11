@@ -4,17 +4,21 @@ local translate = {
   }
 }
 
+local script_data = {
+  translations = {},
+  translation_request = {},
+  translation_in_progress = {},
+  proxies = {}
+}
+
 local table_size = table_size
-local translations = {}
-local translation_request = {}
-local translation_in_progress = {}
 local proxies = {}
 
 local function request_translate(request, callback)
-  if not translation_request[request] then
-    translation_request[request] = {}
+  if not script_data.translation_request[request] then
+    script_data.translation_request[request] = {}
   end
-  table.insert(translation_request[request], callback)
+  table.insert(script_data.translation_request[request], callback)
 end
 
 function translate.translate(request, callback)
@@ -24,8 +28,8 @@ function translate.translate(request, callback)
   if type(request) == "table" then
     request = game.table_to_json(request)
   end
-  if translations[request] then
-    return callback(translations[request])
+  if script_data.translations[request] then
+    return callback(script_data.translations[request])
   end
 
   request_translate(request, callback)
@@ -34,18 +38,39 @@ function translate.translate(request, callback)
 end
 
 function translate.in_progress()
-  return table_size(translation_request) > 0 or table_size(translation_in_progress) > 0
+  return table_size(script_data.translation_request) > 0 or table_size(script_data.translation_in_progress) > 0
+end
+
+function translate.on_load()
+  script_data = global.translation_script or script_data
+end
+
+function translate.on_init()
+  global.translation_script = global.translation_script or script_data
+end
+
+function translate.on_configuration_changed(event)
+  -- Make sure to reset the script_data
+  script_data = {
+    translations = {},
+    translation_request = {},
+    translation_in_progress = {},
+    proxies = {}
+  }
+  if not global.translation_script then
+    global.translation_script = script_data
+  end
 end
 
 translate.events = {
   [defines.events.on_tick] = function(event)
-    if event.tick % 20 == 0 and table_size(translation_request) > 0 then
+    if event.tick % 20 == 0 and table_size(script_data.translation_request) > 0 then
       if table_size(game.connected_players) > 0 then
         local i = 1
         local remove = {}
         local json_to_table = game.json_to_table
         for _, player in pairs(game.connected_players) do
-          for r, cb in pairs(translation_request) do
+          for r, cb in pairs(script_data.translation_request) do
             if not remove[r] then
               if i == translate.config.batch_size then
                 break
@@ -55,7 +80,7 @@ translate.events = {
               else
                 player.request_translation(r)
               end
-              translation_in_progress[r] = cb
+              script_data.translation_in_progress[r] = cb
               remove[r] = true
               i = i + 1
             end
@@ -63,7 +88,7 @@ translate.events = {
         end
 
         for k, _ in pairs(remove) do
-          translation_request[k] = nil
+          script_data.translation_request[k] = nil
         end
       end
     end
@@ -78,22 +103,24 @@ translate.events = {
       -- retry
       if event.localised_string[1]:find("item%-name.") ~= nil then
         local replaced = event.localised_string[1]:gsub("item%-name%.", "entity-name.")
-        proxies[game.table_to_json({replaced})] = str
+        script_data.proxies[game.table_to_json({replaced})] = str
         game.players[event.player_index].request_translation({replaced})
         return
       end
       result = event.localised_string[1]:gsub("entity%-name%.", ""):gsub("technology%-name%.", ""):gsub("recipe%-name%.", ""):gsub("item%-name%.", ""):gsub("fluid%-name%.", "")
     end
-    if proxies[str] then
+    if script_data.proxies[str] then
       local old_str = str
-      str = proxies[str]
-      proxies[old_str] = nil
+      str = script_data.proxies[str]
+      script_data.proxies[old_str] = nil
     end
-    translations[str] = result
-    for idx, cb in pairs(translation_in_progress[str]) do
-      cb(result)
+    script_data.translations[str] = result
+    if #script_data.translation_in_progress and script_data.translation_in_progress[str] and #script_data.translation_in_progress[str] then
+      for idx, cb in pairs(script_data.translation_in_progress[str]) do
+        cb(result)
+      end
     end
-    translation_in_progress[str] = nil
+    script_data.translation_in_progress[str] = nil
   end
 }
 
