@@ -41,8 +41,9 @@ local lib = {
       -- reset research gauge
       gauges.research_queue = renew_gauge(gauges.research_queue, "factorio_research_queue", "research", {"force", "name", "level", "index", "localised_name"})
       gauges.logistic_network_items =
-        renew_gauge(gauges.logistic_network_items, "factorio_logistics_items", "Items in logistics", {"force", "surface", "network_idx", "name", "localised_name"})
-      gauges.logistic_network_bots = renew_gauge(gauges.logistic_network_bots, "factorio_logistics_bots", "Bots in logistic networks", {"force", "surface", "network_idx", "type"})
+        renew_gauge(gauges.logistic_network_items, "factorio_logistics_items", "Items in logistics", {"force", "surface", "network_idx", "name", "localised_name", "network_type"})
+      gauges.logistic_network_bots =
+        renew_gauge(gauges.logistic_network_bots, "factorio_logistics_bots", "Bots in logistic networks", {"force", "surface", "network_idx", "type", "network_type", "network_name"})
 
       for _, force in pairs(game.forces) do
         local force_name = force.name
@@ -122,6 +123,24 @@ local lib = {
         }
         for surface, networks in pairs(force.logistic_networks) do
           for idx, network in pairs(networks) do
+            local charging = 0
+            local waiting_for_charge = 0
+            local net_type = nil
+            for _, cell in pairs(network.cells) do
+              charging = charging + cell.charging_robot_count
+              waiting_for_charge = waiting_for_charge + cell.to_charge_robot_count
+              if not net_type then
+                net_type = {cell.owner.type, cell.owner.localised_name}
+              end
+            end
+            translate.translate(
+              net_type[2],
+              function(translated)
+                gauges.logistic_network_bots:set(charging, {force_name, surface, idx, "charging_bots", net_type[1], translated})
+                gauges.logistic_network_bots:set(waiting_for_charge, {force_name, surface, idx, "waiting_for_charge", net_type[1], translated})
+              end
+            )
+
             for name, n in pairs(network.get_contents()) do
               local v = (n + 2 ^ 31) % 2 ^ 32 - 2 ^ 31
               translate.translate(
@@ -132,16 +151,13 @@ local lib = {
               )
             end
             for _, src in pairs(bot_stats) do
-              gauges.logistic_network_bots:set(network[src], {force_name, surface, idx, src})
+              translate.translate(
+                net_type[2],
+                function(translated)
+                  gauges.logistic_network_bots:set(network[src], {force_name, surface, idx, src, net_type[1], translated})
+                end
+              )
             end
-            local charging = 0
-            local waiting_for_charge = 0
-            for _, cell in pairs(network.cells) do
-              charging = charging + cell.charging_robot_count
-              waiting_for_charge = waiting_for_charge + cell.to_charge_robot_count
-            end
-            gauges.logistic_network_bots:set(charging, {force_name, surface, idx, "charging_bots"})
-            gauges.logistic_network_bots:set(waiting_for_charge, {force_name, surface, idx, "waiting_for_charge"})
           end
         end
       end

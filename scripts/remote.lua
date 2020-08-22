@@ -30,9 +30,9 @@ interface = {
     end
     return remote_counters[name]
   end,
-  counter_set = function(name, value, labels)
+  counter_inc = function(name, value, labels)
     local counter = interface.get_counter(name)
-    counter:set(value, labels)
+    counter:inc(value, labels)
   end,
   -- Return a new gauge every time
   make_gauge = function(name, desc, labels, make_new)
