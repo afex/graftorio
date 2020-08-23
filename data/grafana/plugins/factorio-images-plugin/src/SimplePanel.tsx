@@ -5,7 +5,7 @@ import { SimpleOptions } from 'types';
 interface Props extends PanelProps<SimpleOptions> {}
 
 const REGEX = /\[(?:img|item|entity|recipe|fluid|virtual-signal)=(.*?)]/;
-const ICON_REGEX = /icon\[([@!a-zA-Z\d\-]*)\]/;
+const ICON_REGEX = /icon\[([#@!a-zA-Z\d\-]*)\]/;
 const IMAGE_URL = 'https://wiki.factorio.com/images/thumb/';
 
 const fixedSet: { [key: string]: string } = {
@@ -32,9 +32,15 @@ const fixedSet: { [key: string]: string } = {
 };
 
 const mapImages = (match: string, second: any): string | string => {
-  const extractedItem = second.replace(new RegExp(/item(\.|\/)/, 'g'), '');
+  const extractedItem = second.replace(/item(\.|\/)/g, '');
 
-  let item = (extractedItem.charAt(0).toUpperCase() + extractedItem.slice(1)).replace(new RegExp(/-/, 'g'), '_');
+  let item = extractedItem.charAt(0).toUpperCase() + extractedItem.slice(1);
+  if (item.charAt(0) === '#') {
+    item = item.replace(/#/g, '');
+  } else {
+    item = item.replace(/-/g, '_');
+  }
+
   if (fixedSet[item]) {
     item = fixedSet[item];
   }
@@ -84,6 +90,15 @@ export const SimplePanel: React.FC<Props> = ({ options, data, width, height }) =
         });
         const titles = document.querySelectorAll('.panel-title');
         traversal(titles, (element: any) => {
+          let html = element.parentNode.innerHTML;
+          html = html.replace(new RegExp(REGEX, 'g'), mapImages);
+          html = html.replace(new RegExp(ICON_REGEX, 'g'), mapImages);
+          if (element.parentNode.innerHTML !== html) {
+            element.parentNode.innerHTML = html;
+          }
+        });
+        const rows = document.querySelectorAll('.dashboard-row__title');
+        traversal(rows, (element: any) => {
           let html = element.parentNode.innerHTML;
           html = html.replace(new RegExp(REGEX, 'g'), mapImages);
           html = html.replace(new RegExp(ICON_REGEX, 'g'), mapImages);
