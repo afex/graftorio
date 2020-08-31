@@ -8,12 +8,9 @@ local script_data = {
   translations = {},
   translation_request = {},
   translation_in_progress = {},
-  proxies = {}
 }
 
 local table_size = table_size
-local proxies = {}
-
 local function request_translate(request, callback)
   if not script_data.translation_request[request] then
     script_data.translation_request[request] = {}
@@ -55,7 +52,6 @@ function translate.on_configuration_changed(event)
     translations = {},
     translation_request = {},
     translation_in_progress = {},
-    proxies = {}
   }
   if not global.translation_script then
     global.translation_script = script_data
@@ -64,31 +60,45 @@ end
 
 translate.events = {
   [defines.events.on_tick] = function(event)
+    if event.tick % 20 == 10 and #script_data.translation_in_progress > 0 then
+      local remove = {}
+      for r, progres in pairs(script_data.translation_in_progress) do
+        -- Event took longer than 5 seconds, reschedule
+        if event.tick - progres.tick > 60 * 5 then
+          script_data.translation_request[r] = progres.callbacks
+          table.insert(remove, r)
+        end
+      end
+      for _, i in pairs(remove) do
+        script_data.translation_request[i] = nil
+      end
+    end
+
     if event.tick % 20 == 0 and table_size(script_data.translation_request) > 0 then
       if table_size(game.connected_players) > 0 then
         local i = 1
         local remove = {}
         local json_to_table = game.json_to_table
         for _, player in pairs(game.connected_players) do
-          for r, cb in pairs(script_data.translation_request) do
-            if not remove[r] then
+          for request_string, callbacks in pairs(script_data.translation_request) do
+            if not remove[request_string] then
               if i == translate.config.batch_size then
                 break
               end
-              if r:sub(1, 1) == "{" or r:sub(1, 1) == "[" then
-                player.request_translation(json_to_table(r))
+              if request_string:sub(1, 1) == "{" or request_string:sub(1, 1) == "[" then
+                player.request_translation(json_to_table(request_string))
               else
-                player.request_translation(r)
+                player.request_translation(request_string)
               end
-              script_data.translation_in_progress[r] = cb
-              remove[r] = true
+              script_data.translation_in_progress[request_string] = {tick = event.tick, callbacks = callbacks}
+              remove[request_string] = true
               i = i + 1
             end
           end
         end
 
-        for k, _ in pairs(remove) do
-          script_data.translation_request[k] = nil
+        for key, _ in pairs(remove) do
+          script_data.translation_request[key] = nil
         end
       end
     end
@@ -100,23 +110,11 @@ translate.events = {
       str = game.table_to_json(str)
     end
     if not event.translated then
-      -- retry
-      if event.localised_string[1]:find("item%-name.") ~= nil then
-        local replaced = event.localised_string[1]:gsub("item%-name%.", "entity-name.")
-        script_data.proxies[game.table_to_json({replaced})] = str
-        game.players[event.player_index].request_translation({replaced})
-        return
-      end
       result = event.localised_string[1]:gsub("entity%-name%.", ""):gsub("technology%-name%.", ""):gsub("recipe%-name%.", ""):gsub("item%-name%.", ""):gsub("fluid%-name%.", "")
     end
-    if script_data.proxies[str] then
-      local old_str = str
-      str = script_data.proxies[str]
-      script_data.proxies[old_str] = nil
-    end
     script_data.translations[str] = result
-    if #script_data.translation_in_progress and script_data.translation_in_progress[str] and #script_data.translation_in_progress[str] then
-      for idx, cb in pairs(script_data.translation_in_progress[str]) do
+    if #script_data.translation_in_progress and script_data.translation_in_progress[str] and #script_data.translation_in_progress[str].callbacks then
+      for _, cb in pairs(script_data.translation_in_progress[str].callbacks) do
         cb(result)
       end
     end
