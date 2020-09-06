@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.22
+Date: 22. 08. 2020
+  Changes:
+    - Added extra options for active network requests
+  Bugfixes:
+    - Could crash on server save since entities were stored in global table for power
+    - translations are now collected by its item/entity so no more guessing translations
+---------------------------------------------------------------------------------------------------
 Version: 1.0.20
 Date: 22. 08. 2020
   Changes:

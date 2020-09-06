@@ -6,17 +6,53 @@ local script_data = {
   switches = {}
 }
 
+local map = {}
+
 local function new_entity_entry(entity)
-  script_data.networks[entity.electric_network_id] = {entity = entity, prev = {input = {}, output = {}}}
+  local base = {
+    entity_number = nil,
+    prev = {input = {}, output = {}}
+  }
+  if script_data.networks[entity.electric_network_id] then
+    base.prev = script_data.networks[entity.electric_network_id].prev
+  end
+  script_data.networks[entity.electric_network_id] = base
+  map[entity.unit_number] = entity
+end
+
+local function find_entity(unit_number, entity_type)
+  if map[unit_number] then
+    return map[unit_number]
+  end
+
+  for _, surface in pairs(game.surfaces) do
+    local ents = surface.find_entities_filtered({type = entity_type})
+    for _, entity in pairs(ents) do
+      if entity.unit_number == unit_number then
+        map[entity.unit_number] = entity
+        return entity
+      end
+    end
+  end
 end
 
 local function rescan_worlds()
   local networks = script_data.networks
+  local invalids = {}
+  for idx, network in pairs(networks) do
+    if network.entity_number then
+      local assoc = find_entity(network.entity_number, "electric-pole")
+      if not assoc then
+        invalids[idx] = true
+      end
+    end
+  end
   for _, surface in pairs(game.surfaces) do
     local ents = surface.find_entities_filtered({type = "electric-pole"})
     for _, entity in pairs(ents) do
-      if not networks[entity.electric_network_id] or not networks[entity.electric_network_id].valid then
+      if not networks[entity.electric_network_id] or invalids[entity.electric_network_id] then
         new_entity_entry(entity)
+        invalids[entity.electric_network_id] = nil
       end
     end
   end
@@ -25,7 +61,13 @@ end
 local function get_ignored_networks_by_switches()
   local ignored = {}
   local max = math.max
-  for _, switch in pairs(script_data.switches) do
+  for switch_id, val in pairs(script_data.switches) do
+    -- assume old entity
+    if val ~= 1 and val and val.valid then
+      script_data.switches[val.unit_number] = 1
+      script_data.switches[switch_id] = nil
+    end
+    local switch = find_entity(switch_id, "power-switch")
     if switch.power_switch_state and #switch.neighbours.copper > 1 then
       local network = max(switch.neighbours.copper[1].electric_network_id, switch.neighbours.copper[2].electric_network_id)
       ignored[network] = true
@@ -41,7 +83,8 @@ local on_build = function(event)
       new_entity_entry(entity)
     end
   elseif entity and entity.type == "power-switch" then
-    script_data.switches[entity.unit_number] = entity
+    script_data.switches[entity.unit_number] = 1
+    map[entity.unit_number] = entity
   end
 end
 
@@ -118,7 +161,16 @@ local lib = {
           renew_gauge(gauges.power_production_output, "factorio_power_production_output", "power consumed", {"force", "name", "network", "surface", "localised_name"})
 
         for idx, network in pairs(script_data.networks) do
-          local entity = network.entity
+          -- reset old style in case it still is old
+          if network.entity then
+            network.entity_number = network.entity.unit_number
+            network.entity = nil
+          end
+          local entity = find_entity(network.entity_number, "electric-pole")
+          if not entity then
+            rescan_worlds()
+            entity = find_entity(network.entity_number, "electric-pole")
+          end
           if entity and entity.valid and not ignored[entity.electric_network_id] and entity.electric_network_id == idx then
             -- local prevs = network.prev
             local force_name = entity.force.name
