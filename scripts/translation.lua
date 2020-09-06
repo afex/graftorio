@@ -8,6 +8,7 @@ local script_data = {
   translations = {},
   translation_request = {},
   translation_in_progress = {},
+  translation_tries = {}
 }
 
 local table_size = table_size
@@ -52,6 +53,7 @@ function translate.on_configuration_changed(event)
     translations = {},
     translation_request = {},
     translation_in_progress = {},
+    translation_tries = {}
   }
   if not global.translation_script then
     global.translation_script = script_data
@@ -65,12 +67,18 @@ translate.events = {
       for r, progres in pairs(script_data.translation_in_progress) do
         -- Event took longer than 5 seconds, reschedule
         if event.tick - progres.tick > 60 * 5 then
-          script_data.translation_request[r] = progres.callbacks
-          table.insert(remove, r)
+          if script_data.translation_tries[r] > 5 then
+            -- stop trying
+            debug("Failed to translate string " .. r)
+            table.insert(remove, r)
+          else
+            script_data.translation_request[r] = progres.callbacks
+            table.insert(remove, r)
+          end
         end
       end
       for _, i in pairs(remove) do
-        script_data.translation_request[i] = nil
+        script_data.translation_in_progress[i] = nil
       end
     end
 
@@ -91,6 +99,7 @@ translate.events = {
                 player.request_translation(request_string)
               end
               script_data.translation_in_progress[request_string] = {tick = event.tick, callbacks = callbacks}
+              script_data.translation_tries[request_string] = (script_data.translation_tries[request_string] or 0) + 1
               remove[request_string] = true
               i = i + 1
             end

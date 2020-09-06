@@ -1,6 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.23
+Date: 06. 09. 2020
+  Bugfixes:
+    - Translation could crash the server if wrongly saved..
+---------------------------------------------------------------------------------------------------
 Version: 1.0.22
-Date: 22. 08. 2020
+Date: 06. 09. 2020
   Changes:
     - Added extra options for active network requests
   Bugfixes:
