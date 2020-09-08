@@ -39,12 +39,20 @@ end
 local function rescan_worlds()
   local networks = script_data.networks
   local invalids = {}
+  local remove = {}
   for idx, network in pairs(networks) do
+    if network.entity then
+      network.entity_number = network.entity.unit_number
+      network.entity = nil
+    end
+
     if network.entity_number then
       local assoc = find_entity(network.entity_number, "electric-pole")
       if not assoc then
         invalids[idx] = true
       end
+    else
+      remove[idx] = true
     end
   end
   for _, surface in pairs(game.surfaces) do
@@ -54,6 +62,12 @@ local function rescan_worlds()
         new_entity_entry(entity)
         invalids[entity.electric_network_id] = nil
       end
+    end
+  end
+
+  if table_size(remove) > 0 then
+    for idx, _ in pairs(remove) do
+      networks[idx] = nil
     end
   end
 end
