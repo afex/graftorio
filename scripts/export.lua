@@ -29,10 +29,16 @@ local function doExport()
   local slices = table_chunk(reg.collectors, chunkSize)
   global.export_data = {
     current = 1,
-    chunks = slices
+    chunks = slices,
+    save_mode = settings.global["graftorio-server-save"].value or false
   }
+
   -- clear out file
-  game.write_file("graftorio/game.prom", "", false)
+  if global.export_data.save_mode then
+    game.write_file("graftorio/game.prom", "", false, 0)
+  else
+    game.write_file("graftorio/game.prom", "", false)
+  end
 end
 
 local lib = {
@@ -49,8 +55,7 @@ local lib = {
   events = {
     [defines.events.on_tick] = function(event)
       local d = global.export_data
-      if d and d.current and d.chunks[d.current] then
-        local concat = table.concat
+      if d and d.current and d.chunks[d.current] and event.tick % 4 == 0 then
         local insert = table.insert
         local result = {}
         for _, collector in pairs(d.chunks[d.current]) do
@@ -60,7 +65,11 @@ local lib = {
           insert(result, "")
         end
         d.current = d.current + 1
-        game.write_file("graftorio/game.prom", concat(result, "\n") .. "\n", true)
+        if d.save_mode then
+          game.write_file("graftorio/game.prom", table.concat(result, "\n") .. "\n", true, 0)
+        else
+          game.write_file("graftorio/game.prom", table.concat(result, "\n") .. "\n", true)
+        end
       end
       if await_export and event.tick % 30 == 0 and not translate.in_progress() then
         doExport()
