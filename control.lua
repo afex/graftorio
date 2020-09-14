@@ -6,7 +6,7 @@ histograms = {}
 
 -- All the events are split into the 10 second export time (600 ticks)
 --
--- export: 0 - 10
+-- export: 0 - 40
 -- force_stats: 60, 80
 -- trains: 120
 -- power: 240
