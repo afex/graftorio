@@ -10,7 +10,7 @@ local map = {}
 
 local function new_entity_entry(entity)
   local base = {
-    entity_number = nil,
+    entity_number = entity.unit_number,
     prev = {input = {}, output = {}}
   }
   if script_data.networks[entity.electric_network_id] then

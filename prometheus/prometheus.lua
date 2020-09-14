@@ -54,11 +54,12 @@ function Registry:collect()
   end
 
   local result = {}
+  local insert = table.insert
   for _, collector in pairs(self.collectors) do
     for _, metric in ipairs(collector:collect()) do
-      table.insert(result, metric)
+      insert(result, metric)
     end
-    table.insert(result, "")
+    insert(result, "")
   end
   return result
 end
@@ -235,21 +236,23 @@ end
 
 function Gauge:collect()
   local result = {}
+  local insert = table.insert
 
   if next(self.observations) == nil then
     return {}
   end
 
-  table.insert(result, "# HELP " .. self.name .. " " .. escape_string(self.help))
-  table.insert(result, "# TYPE " .. self.name .. " gauge")
+  insert(result, "# HELP " .. self.name .. " " .. escape_string(self.help))
+  insert(result, "# TYPE " .. self.name .. " gauge")
+  local label_values, prefix, labels, str
 
   for key, observation in pairs(self.observations) do
-    local label_values = self.label_values[key]
-    local prefix = self.name
-    local labels = zip(self.labels, label_values)
+    label_values = self.label_values[key]
+    prefix = self.name
+    labels = zip(self.labels, label_values)
 
-    local str = prefix .. labels_to_string(labels) .. " " .. metric_to_string(observation)
-    table.insert(result, str)
+    str = prefix .. labels_to_string(labels) .. " " .. metric_to_string(observation)
+    insert(result, str)
   end
 
   return result
