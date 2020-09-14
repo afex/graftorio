@@ -1,6 +1,6 @@
 {
   "name": "graftorio",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "title": "graftorio",
   "author": "afex",
   "description": "visualize metrics from your factorio game in grafana",
