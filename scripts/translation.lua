@@ -23,9 +23,13 @@ function translate.translate(request, callback)
   callback = callback or function(args)
       return args
     end
+
   if type(request) == "table" then
     request = game.table_to_json(request)
   end
+
+  request = game.encode_string(request)
+
   if script_data.translations[request] then
     return callback(script_data.translations[request])
   end
@@ -55,9 +59,7 @@ function translate.on_configuration_changed(event)
     translation_in_progress = {},
     translation_tries = {}
   }
-  if not global.translation_script then
-    global.translation_script = script_data
-  end
+  global.translation_script = script_data
 end
 
 translate.events = {
@@ -93,10 +95,11 @@ translate.events = {
               if i == translate.config.batch_size then
                 break
               end
-              if request_string:sub(1, 1) == "{" or request_string:sub(1, 1) == "[" then
-                player.request_translation(json_to_table(request_string))
+              local decoded_string = game.decode_string(request_string)
+              if decoded_string:sub(1, 1) == "{" or decoded_string:sub(1, 1) == "[" then
+                player.request_translation(json_to_table(decoded_string))
               else
-                player.request_translation(request_string)
+                player.request_translation(decoded_string)
               end
               script_data.translation_in_progress[request_string] = {tick = event.tick, callbacks = callbacks}
               script_data.translation_tries[request_string] = (script_data.translation_tries[request_string] or 0) + 1
@@ -118,6 +121,7 @@ translate.events = {
     if type(str) == "table" then
       str = game.table_to_json(str)
     end
+    str = game.encode_string(str)
     if not event.translated then
       result = event.localised_string[1]:gsub("entity%-name%.", ""):gsub("technology%-name%.", ""):gsub("recipe%-name%.", ""):gsub("item%-name%.", ""):gsub("fluid%-name%.", "")
     end

@@ -3,6 +3,7 @@ Version: 1.0.27
 Date: 19. 11. 2020
   Changes:
     - Nothing much, but a few things changed since .23 (cannot remember)
+    - When changing configuration the translations weren't cleared properly
   Bugfixes:
     - When adding new mods on a save that was stored during exporting graftorio data
 ---------------------------------------------------------------------------------------------------
