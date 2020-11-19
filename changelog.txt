@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.27
+Date: 19. 11. 2020
+  Changes:
+    - Nothing much, but a few things changed since .23 (cannot remember)
+  Bugfixes:
+    - When adding new mods on a save that was stored during exporting graftorio data
+---------------------------------------------------------------------------------------------------
 Version: 1.0.23
 Date: 06. 09. 2020
   Bugfixes:

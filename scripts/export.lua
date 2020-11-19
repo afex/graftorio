@@ -55,20 +55,24 @@ local lib = {
   events = {
     [defines.events.on_tick] = function(event)
       local d = global.export_data
-      if d and d.current and d.chunks[d.current] and event.tick % 4 == 0 then
+      if d and d.current and d.chunks[d.current] and event.tick % 4 == 0 and not translate.in_progress() then
         local insert = table.insert
         local result = {}
         for _, collector in pairs(d.chunks[d.current]) do
-          for _, metric in ipairs(collector:collect()) do
-            insert(result, metric)
+          if collector.collect then
+            for _, metric in pairs(collector:collect()) do
+              insert(result, metric)
+            end
+            insert(result, "")
           end
-          insert(result, "")
         end
         d.current = d.current + 1
-        if d.save_mode then
-          game.write_file("graftorio/game.prom", table.concat(result, "\n") .. "\n", true, 0)
-        else
-          game.write_file("graftorio/game.prom", table.concat(result, "\n") .. "\n", true)
+        if table_size(result) > 0 then
+          if d.save_mode then
+            game.write_file("graftorio/game.prom", table.concat(result, "\n") .. "\n", true, 0)
+          else
+            game.write_file("graftorio/game.prom", table.concat(result, "\n") .. "\n", true)
+          end
         end
       end
       if await_export and event.tick % 30 == 0 and not translate.in_progress() then
