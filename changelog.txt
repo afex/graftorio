@@ -1,0 +1,47 @@
+---------------------------------------------------------------------------------------------------
+Version: 1.0.27
+Date: 19. 11. 2020
+  Changes:
+    - Nothing much, but a few things changed since .23 (cannot remember)
+    - When changing configuration the translations weren't cleared properly
+  Bugfixes:
+    - When adding new mods on a save that was stored during exporting graftorio data
+---------------------------------------------------------------------------------------------------
+Version: 1.0.23
+Date: 06. 09. 2020
+  Bugfixes:
+    - Translation could crash the server if wrongly saved..
+---------------------------------------------------------------------------------------------------
+Version: 1.0.22
+Date: 06. 09. 2020
+  Changes:
+    - Added extra options for active network requests
+  Bugfixes:
+    - Could crash on server save since entities were stored in global table for power
+    - translations are now collected by its item/entity so no more guessing translations
+---------------------------------------------------------------------------------------------------
+Version: 1.0.20
+Date: 22. 08. 2020
+  Changes:
+    - Added network cell owner type
+  Bugfixes:
+    - Counter remote interface fixed
+---------------------------------------------------------------------------------------------------
+Version: 1.0.15
+Date: 08. 08. 2020
+  Bugfixes:
+    - Fixing plugin options: make sure it can be used and doesn't trigger crashes
+  Changes:
+    - remote interface is expanded to make plugins work
+---------------------------------------------------------------------------------------------------
+Version: 1.0.13
+Date: 04. 08. 2020
+  Features:
+    - Added power output
+    - Added logistic network information
+  Modding:
+    - Allowed for plugins to hook into the graftorio exporting
+  Changes:
+    - Recreate gauges for often changing items such as research_queue
+    - Disabled train histograms for now because of incomplete/incorrect data
+    - Added the first changelog.txt
